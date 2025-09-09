@@ -1,9 +1,6 @@
-//
-//  OnboardingView.swift
-//  beacon
-//
-//  Created by GitHub Copilot on 2025-08-03.
-//
+// Author: Mubashir Osmani
+// beacon
+// onboarding view
 
 import SwiftUI
 
@@ -17,8 +14,6 @@ struct OnboardingView: View {
         NavigationStack {
             VStack(spacing: 40) {
                 Spacer()
-                
-                // App Logo/Title
                 VStack(spacing: 16) {
                     Image(systemName: "location.fill")
                         .font(.system(size: 80))

@@ -35,6 +35,26 @@ struct SettingsView: View {
                             step: 5)
                 }
             }
+            
+            Section("Calendar Integration") {
+                NavigationLink(destination: CalendarConnectionsView()) {
+                    HStack {
+                        Image(systemName: "calendar.badge.plus")
+                            .foregroundColor(.blue)
+                        Text("Connect Calendars")
+                    }
+                }
+            }
+            
+            Section("AI Assistant") {
+                NavigationLink(destination: LLMSettingsView()) {
+                    HStack {
+                        Image(systemName: "brain.head.profile")
+                            .foregroundColor(.purple)
+                        Text("LLM Settings")
+                    }
+                }
+            }
         
             
             Section("About") {

@@ -14,6 +14,33 @@ class NotificationService: ObservableObject {
     
     private init() {}
     
+    func scheduleDailyNotification(title: String, body: String, identifier: String, at dateComponents: DateComponents, repeats: Bool) {
+        let content = UNMutableNotificationContent()
+        content.title = title
+        content.body = body
+        content.sound = .default
+        
+        // Create a calendar trigger
+        let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: repeats)
+        
+        // Create the request
+        let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
+        
+        // Schedule the notification
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error = error {
+                print("Error scheduling daily notification: \(error)")
+            } else {
+                print("Daily notification scheduled successfully: \(identifier)")
+            }
+        }
+    }
+    
+    func cancelNotification(withIdentifier identifier: String) {
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [identifier])
+        print("Notification canceled: \(identifier)")
+    }
+    
     func requestPermission() async -> Bool {
         let authorizationOptions: UNAuthorizationOptions = [.alert, .sound, .badge]
         do {

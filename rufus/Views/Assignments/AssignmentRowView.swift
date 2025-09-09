@@ -11,35 +11,38 @@ import SwiftData
 struct AssignmentRowView: View {
     @Environment(\.modelContext) private var modelContext
     @Bindable var assignment: Assignment
+    @AppStorage("llmEnabled") private var llmEnabled: Bool = false
+    @AppStorage("smartRemindersEnabled") private var smartRemindersEnabled: Bool = false
     
     var body: some View {
-        HStack {
-            // Course color indicator
-            if let course = assignment.course {
-                Circle()
-                    .fill(Color(hex: course.color))
-                    .frame(width: 8, height: 8)
-            }
-            
-            VStack(alignment: .leading, spacing: 2) {
-                Text(assignment.title)
-                    .font(.headline)
-                
-                // Show course name if available, otherwise show subject
+        VStack(alignment: .leading) {
+            HStack {
+                // Course color indicator
                 if let course = assignment.course {
-                    Text(course.displayName)
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                } else if !assignment.subject.isEmpty {
-                    Text(assignment.subject)
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
+                    Circle()
+                        .fill(Color(hex: course.color))
+                        .frame(width: 8, height: 8)
                 }
                 
-                Text("Due: \(assignment.dueDate, formatter: dateFormatter)")
-                    .font(.caption)
-                    .foregroundColor(assignment.isOverdue ? .red : .secondary)
-            }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(assignment.title)
+                        .font(.headline)
+                    
+                    // Show course name if available, otherwise show subject
+                    if let course = assignment.course {
+                        Text(course.displayName)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    } else if !assignment.subject.isEmpty {
+                        Text(assignment.subject)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    Text("Due: \(assignment.dueDate, formatter: dateFormatter)")
+                        .font(.caption)
+                        .foregroundColor(assignment.isOverdue ? .red : .secondary)
+                }
             
             Spacer()
             
@@ -48,6 +51,18 @@ struct AssignmentRowView: View {
                 Toggle("", isOn: $assignment.isCompleted)
                     .labelsHidden()
             }
+            
+            // End of HStack
+        }
+        
+        // Add Smart Reminder if enabled
+        if llmEnabled && smartRemindersEnabled && !assignment.isCompleted {
+            SmartReminderView(assignment: assignment)
+                .padding(.leading, 16)
+                .padding(.top, 4)
+        }
+        
+        // End of VStack
         }
         .padding(.vertical, 4)
         .contextMenu {

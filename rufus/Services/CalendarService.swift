@@ -35,12 +35,15 @@ enum CalendarSource: String, CaseIterable {
 // MARK: - Calendar Service
 @MainActor
 class CalendarService: ObservableObject {
+    static let shared = CalendarService()
+    
     @Published var calendarEvents: [CalendarEvent] = []
     @Published var hasCalendarAccess = false
     @Published var isLoading = false
     @Published var errorMessage: String?
     
     private let eventStore = EKEventStore()
+    private let googleCalendarService = GoogleCalendarService()
     private var cancellables = Set<AnyCancellable>()
     
     init() {
@@ -107,46 +110,38 @@ class CalendarService: ObservableObject {
         errorMessage = nil
         
         Task {
-            do {
-                let calendars = eventStore.calendars(for: .event)
-                let startDate = Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()
-                let endDate = Calendar.current.date(byAdding: .month, value: 2, to: Date()) ?? Date()
-                
-                let predicate = eventStore.predicateForEvents(
-                    withStart: startDate,
-                    end: endDate,
-                    calendars: calendars
+            let calendars = eventStore.calendars(for: .event)
+            let startDate = Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()
+            let endDate = Calendar.current.date(byAdding: .month, value: 2, to: Date()) ?? Date()
+            
+            let predicate = eventStore.predicateForEvents(
+                withStart: startDate,
+                end: endDate,
+                calendars: calendars
+            )
+            
+            let events = eventStore.events(matching: predicate)
+            
+            let calendarEvents = events.map { event in
+                CalendarEvent(
+                    title: event.title ?? "Untitled Event",
+                    startDate: event.startDate,
+                    endDate: event.endDate,
+                    location: event.location,
+                    notes: event.notes,
+                    url: event.url,
+                    isAllDay: event.isAllDay,
+                    source: .apple
                 )
-                
-                let events = eventStore.events(matching: predicate)
-                
-                let calendarEvents = events.map { event in
-                    CalendarEvent(
-                        title: event.title ?? "Untitled Event",
-                        startDate: event.startDate,
-                        endDate: event.endDate,
-                        location: event.location,
-                        notes: event.notes,
-                        url: event.url,
-                        isAllDay: event.isAllDay,
-                        source: .apple
-                    )
-                }
-                
-                await MainActor.run {
-                    self.calendarEvents = calendarEvents
-                    self.isLoading = false
-                }
-            } catch {
-                await MainActor.run {
-                    self.errorMessage = "Failed to load calendar events: \(error.localizedDescription)"
-                    self.isLoading = false
-                }
+            }
+            
+            await MainActor.run {
+                self.calendarEvents = calendarEvents
+                self.isLoading = false
             }
         }
     }
     
-    // MARK: - Google Calendar Integration
     func loadGoogleCalendarEvents() {
         guard GIDSignIn.sharedInstance.currentUser != nil else {
             errorMessage = "Please sign in with Google first."
@@ -157,14 +152,66 @@ class CalendarService: ObservableObject {
         errorMessage = nil
         
         Task {
-            // This is a placeholder for Google Calendar API integration
-            // You would need to implement the actual Google Calendar API calls here
-            // For now, we'll just clear any existing Google events
-            
-            await MainActor.run {
-                // Remove existing Google events and keep Apple events
-                self.calendarEvents = self.calendarEvents.filter { $0.source == .apple }
-                self.isLoading = false
+            do {
+                let endDate = Calendar.current.date(byAdding: .month, value: 3, to: Date()) ?? Date()
+                let googleEvents = try await googleCalendarService.fetchGoogleCalendarEvents(from: Date(), to: endDate)
+                
+                let calendarEvents = googleEvents.compactMap { eventDict -> CalendarEvent? in
+                    guard let summary = eventDict["summary"] as? String else { return nil }
+                    
+                    let start = eventDict["start"] as? [String: Any]
+                    let end = eventDict["end"] as? [String: Any]
+                    
+                    let startDate: Date
+                    let endDate: Date
+                    let isAllDay: Bool
+                    
+                    if let dateTime = start?["dateTime"] as? String {
+                        startDate = ISO8601DateFormatter().date(from: dateTime) ?? Date()
+                        isAllDay = false
+                    } else if let date = start?["date"] as? String {
+                        let formatter = DateFormatter()
+                        formatter.dateFormat = "yyyy-MM-dd"
+                        startDate = formatter.date(from: date) ?? Date()
+                        isAllDay = true
+                    } else {
+                        startDate = Date()
+                        isAllDay = false
+                    }
+                    
+                    if let dateTime = end?["dateTime"] as? String {
+                        endDate = ISO8601DateFormatter().date(from: dateTime) ?? Date()
+                    } else if let date = end?["date"] as? String {
+                        let formatter = DateFormatter()
+                        formatter.dateFormat = "yyyy-MM-dd"
+                        endDate = formatter.date(from: date) ?? Date()
+                    } else {
+                        endDate = startDate
+                    }
+                    
+                    return CalendarEvent(
+                        title: summary,
+                        startDate: startDate,
+                        endDate: endDate,
+                        location: eventDict["location"] as? String,
+                        notes: eventDict["description"] as? String,
+                        url: nil,
+                        isAllDay: isAllDay,
+                        source: .google
+                    )
+                }
+                
+                await MainActor.run {
+                    // Remove existing Google events and add new ones
+                    self.calendarEvents = self.calendarEvents.filter { $0.source == .apple }
+                    self.calendarEvents.append(contentsOf: calendarEvents)
+                    self.isLoading = false
+                }
+            } catch {
+                await MainActor.run {
+                    self.errorMessage = "Failed to load Google Calendar events: \(error.localizedDescription)"
+                    self.isLoading = false
+                }
             }
         }
     }
@@ -180,6 +227,97 @@ class CalendarService: ObservableObject {
         if GIDSignIn.sharedInstance.currentUser != nil {
             loadGoogleCalendarEvents()
         }
+    }
+    
+    // MARK: - Load Calendar Events for a Date Range
+    func loadAllCalendarEvents(from startDate: Date, to endDate: Date) async throws -> [CalendarEvent] {
+        var events: [CalendarEvent] = []
+        
+        // Load Apple Calendar events
+        if hasCalendarAccess {
+            let calendars = eventStore.calendars(for: .event)
+            let predicate = eventStore.predicateForEvents(
+                withStart: startDate,
+                end: endDate,
+                calendars: calendars
+            )
+            
+            let appleEvents = eventStore.events(matching: predicate)
+            
+            let appleCalendarEvents = appleEvents.map { event in
+                CalendarEvent(
+                    title: event.title ?? "Untitled Event",
+                    startDate: event.startDate,
+                    endDate: event.endDate,
+                    location: event.location ?? "",
+                    notes: event.notes,
+                    url: event.url,
+                    isAllDay: event.isAllDay,
+                    source: .apple
+                )
+            }
+            
+            events.append(contentsOf: appleCalendarEvents)
+        }
+        
+        // Load Google Calendar events
+        if GIDSignIn.sharedInstance.currentUser != nil {
+            do {
+                let googleEvents = try await googleCalendarService.fetchGoogleCalendarEvents(from: startDate, to: endDate)
+                
+                let googleCalendarEvents = googleEvents.compactMap { eventDict -> CalendarEvent? in
+                    guard let summary = eventDict["summary"] as? String else { return nil }
+                    
+                    let start = eventDict["start"] as? [String: Any]
+                    let end = eventDict["end"] as? [String: Any]
+                    
+                    let startDate: Date
+                    let endDate: Date
+                    let isAllDay: Bool
+                    
+                    if let dateTime = start?["dateTime"] as? String {
+                        startDate = ISO8601DateFormatter().date(from: dateTime) ?? Date()
+                        isAllDay = false
+                    } else if let date = start?["date"] as? String {
+                        let formatter = DateFormatter()
+                        formatter.dateFormat = "yyyy-MM-dd"
+                        startDate = formatter.date(from: date) ?? Date()
+                        isAllDay = true
+                    } else {
+                        startDate = Date()
+                        isAllDay = false
+                    }
+                    
+                    if let dateTime = end?["dateTime"] as? String {
+                        endDate = ISO8601DateFormatter().date(from: dateTime) ?? Date()
+                    } else if let date = end?["date"] as? String {
+                        let formatter = DateFormatter()
+                        formatter.dateFormat = "yyyy-MM-dd"
+                        endDate = formatter.date(from: date) ?? Date()
+                    } else {
+                        endDate = startDate
+                    }
+                    
+                    return CalendarEvent(
+                        title: summary,
+                        startDate: startDate,
+                        endDate: endDate,
+                        location: eventDict["location"] as? String ?? "",
+                        notes: eventDict["description"] as? String,
+                        url: nil,
+                        isAllDay: isAllDay,
+                        source: .google
+                    )
+                }
+                
+                events.append(contentsOf: googleCalendarEvents)
+            } catch {
+                print("Error loading Google Calendar events: \(error.localizedDescription)")
+                // Don't throw, just continue with the Apple events we have
+            }
+        }
+        
+        return events
     }
     
     // MARK: - Event Creation

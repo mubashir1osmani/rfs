@@ -31,6 +31,12 @@ struct MainTabView: View {
                 Image(systemName: "book.closed")
                 Text("Courses")
             }
+            
+            ChatView()
+                .tabItem {
+                    Image(systemName: "message.circle")
+                    Text("AI Chat")
+                }
         }
     }
 }

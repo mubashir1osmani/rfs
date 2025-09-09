@@ -21,10 +21,7 @@ final class AuthService: ObservableObject {
     @Published var user: User?
     @Published var isLoading = false
 
-    private let client = SupabaseClient(
-        supabaseURL: URL(string: "https://vmzmwybvcybsiplmmelv.supabase.co")!,
-        supabaseKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtem13eWJ2Y3lic2lwbG1tZWx2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU1NDQ3MTEsImV4cCI6MjA2MTEyMDcxMX0.SVWjQUjA5km-db31SwNV0CLZAG0hM213OXIN11nlshQ"
-    )
+    private let client = supabase
 
     private init() {
         Task {
@@ -74,7 +71,27 @@ final class AuthService: ObservableObject {
             throw AuthError.noViewController
         }
         
+        // Configure Google Sign-In with calendar scopes
+        guard let config = GIDSignIn.sharedInstance.configuration else {
+            throw AuthError.noConfiguration
+        }
+        
+        let configWithScopes = GIDConfiguration(
+            clientID: config.clientID,
+            serverClientID: config.serverClientID,
+            hostedDomain: config.hostedDomain,
+            openIDRealm: config.openIDRealm
+        )
+        
+        GIDSignIn.sharedInstance.configuration = configWithScopes
+        
         let result = try await GIDSignIn.sharedInstance.signIn(withPresenting: presentingViewController)
+        
+        // Request calendar scopes if not already granted
+        let calendarScope = "https://www.googleapis.com/auth/calendar.readonly"
+        if result.user.grantedScopes?.contains(calendarScope) != true {
+            try await requestCalendarScopes()
+        }
         
         guard let idToken = result.user.idToken?.tokenString else {
             throw AuthError.noIdToken
@@ -96,6 +113,45 @@ final class AuthService: ObservableObject {
         throw AuthError.platformNotSupported
         #endif
     }
+    
+    // Request Calendar Scopes
+    func requestCalendarScopes() async throws {
+        guard let user = GIDSignIn.sharedInstance.currentUser else {
+            throw NSError(domain: "AuthService", code: 1, userInfo: [NSLocalizedDescriptionKey: "User not signed in"])
+        }
+        
+        // Check if we already have calendar scope
+        let calendarScope = "https://www.googleapis.com/auth/calendar.readonly"
+        if user.grantedScopes?.contains(calendarScope) == true {
+            return
+        }
+        
+        let additionalScopes = [calendarScope]
+        
+        guard let viewController = await MainActor.run(body: {
+            UIApplication.shared.connectedScenes
+                .compactMap { $0 as? UIWindowScene }
+                .flatMap { $0.windows }
+                .first { $0.isKeyWindow }?.rootViewController
+        }) else {
+            throw NSError(domain: "AuthService", code: 2, userInfo: [NSLocalizedDescriptionKey: "No presenting view controller"])
+        }
+        
+        return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            guard let user = GIDSignIn.sharedInstance.currentUser else {
+                continuation.resume(throwing: NSError(domain: "AuthService", code: 1, userInfo: [NSLocalizedDescriptionKey: "User not signed in"]))
+                return
+            }
+            
+            user.addScopes(additionalScopes, presenting: viewController) { result, error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                } else {
+                    continuation.resume(returning: ())
+                }
+            }
+        }
+    }
 
     func signOut() async throws {
         isLoading = true
@@ -111,6 +167,7 @@ enum AuthError: Error, LocalizedError {
     case noViewController
     case noIdToken
     case platformNotSupported
+    case noConfiguration
     
     var errorDescription: String? {
         switch self {
@@ -120,6 +177,8 @@ enum AuthError: Error, LocalizedError {
             return "Failed to get ID token from Google"
         case .platformNotSupported:
             return "Google Sign-In not supported on this platform"
+        case .noConfiguration:
+            return "Google Sign-In configuration not found"
         }
     }
 }
