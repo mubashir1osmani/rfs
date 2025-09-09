@@ -4,10 +4,33 @@
 <dict>
 	<key>SchemeUserState</key>
 	<dict>
+		<key>Promises (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>1</integer>
+		</dict>
 		<key>rufus.xcscheme_^#shared#^_</key>
 		<dict>
 			<key>orderHint</key>
 			<integer>0</integer>
+		</dict>
+	</dict>
+	<key>SuppressBuildableAutocreation</key>
+	<dict>
+		<key>9391E62F2E3098A300606B04</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>9391E63E2E3098A500606B04</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>9391E6482E3098A500606B04</key>
+		<dict>
+			<key>primary</key>
+			<true/>
 		</dict>
 	</dict>
 </dict>

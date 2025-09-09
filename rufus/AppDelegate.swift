@@ -32,6 +32,9 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         // Initialize model container for background checks
         setupModelContainer()
         
+        // Setup LLM background service for daily briefings
+        LLMBackgroundService.shared.setupBackgroundTasks()
+        
         return true
     }
     
