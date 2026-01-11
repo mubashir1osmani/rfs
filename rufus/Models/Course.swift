@@ -13,24 +13,23 @@ final class Course {
     var id: UUID
     var name: String
     var code: String
-    var color: String // Hex color code for UI representation
+    var color: String
     var professor: String
     var createdAt: Date
     
-    // Relationship to assignments
     @Relationship(deleteRule: .cascade, inverse: \Assignment.course)
     var assignments: [Assignment] = []
     
     init(
         name: String,
         code: String = "",
-        color: String = "#007AFF", // Default blue color
+        color: String = "#007AFF",
         professor: String = ""
     ) {
         self.id = UUID()
         self.name = name
         self.code = code
-        // Validate color format and use default if invalid
+        
         self.color = Course.validateColorString(color)
         self.professor = professor
         self.createdAt = Date()

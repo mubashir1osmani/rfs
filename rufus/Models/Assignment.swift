@@ -19,14 +19,26 @@ final class Assignment {
     var subject: String
     var priority: Priority
     
-    // Relationship to course
     var course: Course?
     
-    enum Priority: String, CaseIterable, Codable {
+    enum Priority: String, CaseIterable, Codable, Comparable {
         case low = "Low"
         case medium = "Medium"
         case high = "High"
         case urgent = "Urgent"
+        
+        var intValue: Int {
+            switch self {
+            case .low: return 0
+            case .medium: return 1
+            case .high: return 2
+            case .urgent: return 3
+            }
+        }
+        
+        static func < (lhs: Priority, rhs: Priority) -> Bool {
+            return lhs.intValue < rhs.intValue
+        }
     }
     
     init(

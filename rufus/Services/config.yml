@@ -1,8 +1,0 @@
-general_settings:
-    master_key: "sk-1234"
-    
-model_list:
-    - model_name: "gemini-2.0-flash"
-      litellm_params:
-        model: "gemini/gemini-2.0-flash"
-        api_key: os.environ/GEMINI_API_KEY
