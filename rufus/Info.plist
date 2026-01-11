@@ -29,5 +29,7 @@
 	<string>This app uses speech recognition to convert your voice commands into text.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>This app needs access to your microphone to process your voice commands.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>This app needs access to your location to provide accurate Islamic prayer times for your area.</string>
 </dict>
 </plist>

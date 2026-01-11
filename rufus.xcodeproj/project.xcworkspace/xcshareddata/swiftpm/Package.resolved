@@ -1,5 +1,5 @@
 {
-  "originHash" : "8de5b337144e438cbe48a36b87b6eee592125e636a425d2eed1bfbb0e50816ca",
+  "originHash" : "4141cf694570494a147d1980d6b1e5d35538416a09f9b905fe15ca9e33f116f3",
   "pins" : [
     {
       "identity" : "app-check",
@@ -17,6 +17,15 @@
       "state" : {
         "revision" : "145104f5ea9d58ae21b60add007c33c1cc0c948e",
         "version" : "2.0.0"
+      }
+    },
+    {
+      "identity" : "auth0.swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/auth0/Auth0.swift",
+      "state" : {
+        "revision" : "b717b52ebb84b3d80c41bec0e8974345e102aa67",
+        "version" : "2.16.1"
       }
     },
     {
@@ -56,6 +65,15 @@
       }
     },
     {
+      "identity" : "jwtdecode.swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/auth0/JWTDecode.swift.git",
+      "state" : {
+        "revision" : "36a5ce735a61c4bc119593f43ce2c027b4ca7392",
+        "version" : "3.3.0"
+      }
+    },
+    {
       "identity" : "promises",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/google/promises.git",
@@ -65,12 +83,21 @@
       }
     },
     {
+      "identity" : "simplekeychain",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/auth0/SimpleKeychain.git",
+      "state" : {
+        "revision" : "776c4a6db74d5c6c143974be91c383680d468630",
+        "version" : "1.3.0"
+      }
+    },
+    {
       "identity" : "supabase-swift",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/supabase/supabase-swift",
       "state" : {
-        "revision" : "1fc2013942650f3f149d995ba3c74031139d09b1",
-        "version" : "2.31.1"
+        "revision" : "f633f1ce9ff6dac9f33a1717d191a6c3985148fa",
+        "version" : "2.39.0"
       }
     },
     {
@@ -78,8 +105,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-asn1.git",
       "state" : {
-        "revision" : "f70225981241859eb4aa1a18a75531d26637c8cc",
-        "version" : "1.4.0"
+        "revision" : "810496cf121e525d660cd0ea89a758740476b85f",
+        "version" : "1.5.1"
       }
     },
     {
@@ -96,8 +123,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/swift-concurrency-extras",
       "state" : {
-        "revision" : "82a4ae7170d98d8538ec77238b7eb8e7199ef2e8",
-        "version" : "1.3.1"
+        "revision" : "5a3825302b1a0d744183200915a47b508c828e6f",
+        "version" : "1.3.2"
       }
     },
     {
@@ -105,8 +132,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-crypto.git",
       "state" : {
-        "revision" : "176abc28e002a9952470f08745cd26fad9286776",
-        "version" : "3.13.3"
+        "revision" : "6f70fa9eab24c1fd982af18c281c4525d05e3095",
+        "version" : "4.2.0"
       }
     },
     {
@@ -114,8 +141,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-http-types.git",
       "state" : {
-        "revision" : "a0a57e949a8903563aba4615869310c0ebf14c03",
-        "version" : "1.4.0"
+        "revision" : "45eb0224913ea070ec4fba17291b9e7ecf4749ca",
+        "version" : "1.5.1"
       }
     },
     {
@@ -123,8 +150,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/xctest-dynamic-overlay",
       "state" : {
-        "revision" : "23e3442166b5122f73f9e3e622cd1e4bafeab3b7",
-        "version" : "1.6.0"
+        "revision" : "31073495cae9caf243c440eac94b3ab067e3d7bc",
+        "version" : "1.8.0"
       }
     }
   ],

@@ -246,6 +246,7 @@
 			packageReferences = (
 				936672712E3C752F00FFFBDC /* XCRemoteSwiftPackageReference "supabase-swift" */,
 				936672722E3C755200FFFBDC /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+				93BA8D012E9DED0F00500EAD /* XCRemoteSwiftPackageReference "Auth0" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 9391E6312E3098A300606B04 /* Products */;
@@ -620,6 +621,14 @@
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 9.0.0;
+			};
+		};
+		93BA8D012E9DED0F00500EAD /* XCRemoteSwiftPackageReference "Auth0" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/auth0/Auth0.swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.15.1;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */

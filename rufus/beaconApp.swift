@@ -3,7 +3,6 @@
 //  beacon
 //
 //  Created by Mubashir Osmani on 2025-07-23.
-//
 
 import SwiftUI
 import SwiftData
@@ -21,7 +20,14 @@ struct beaconApp: App {
             Assignment.self,
             NotificationItem.self,
             Course.self,
-    
+            KnowledgeEntry.self,
+            KnowledgeAnnotation.self,
+            Goal.self,
+            GoalTask.self,
+            AssistantSettings.self,
+            UserLocation.self,
+            DailyPrayerTimes.self,
+            Note.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 

@@ -54,8 +54,12 @@ struct NotebookView: View {
     private func addNote() {
         guard !newNoteText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         
-        let note = Note(content: newNoteText)
+        // Use the ID from your authenticated Supabase user
+        let currentUserId = AuthService.shared.user?.id.uuidString ?? ""
+        
+        let note = Note(content: newNoteText, userId: currentUserId)
         modelContext.insert(note)
+        
         newNoteText = ""
         isInputActive = false
     }
