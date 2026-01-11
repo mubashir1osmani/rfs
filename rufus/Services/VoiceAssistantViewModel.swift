@@ -32,7 +32,17 @@ final class VoiceAssistantViewModel: ObservableObject {
             }
         }
         // Request microphone permission
-        _ = await AVAudioSession.sharedInstance().requestRecordPermission()
+        await withCheckedContinuation { (cont: CheckedContinuation<Void, Never>) in
+            if #available(iOS 17.0, *) {
+                AVAudioApplication.requestRecordPermission { _ in
+                    cont.resume()
+                }
+            } else {
+                AVAudioSession.sharedInstance().requestRecordPermission { _ in
+                    cont.resume()
+                }
+            }
+        }
     }
 
     func toggleListening() {
@@ -47,7 +57,12 @@ final class VoiceAssistantViewModel: ObservableObject {
 
         let session = AVAudioSession.sharedInstance()
         do {
-            try session.setCategory(.playAndRecord, mode: .spokenAudio, options: [.duckOthers, .defaultToSpeaker, .allowBluetooth])
+            if #available(iOS 17.0, *) {
+                try session.setCategory(.playAndRecord, mode: .spokenAudio, options: [.duckOthers, .defaultToSpeaker, .allowBluetooth])
+            } else {
+                // On older iOS, `.allowBluetooth` is also available; keep the same options
+                try session.setCategory(.playAndRecord, mode: .spokenAudio, options: [.duckOthers, .defaultToSpeaker, .allowBluetooth])
+            }
             try session.setActive(true, options: .notifyOthersOnDeactivation)
         } catch {
             print("Audio session error: \(error)")
@@ -129,19 +144,19 @@ final class VoiceAssistantViewModel: ObservableObject {
     // MARK: - Hooks you can connect to your data layer
     private func addTodo(title: String, due: Date?) {
         // TODO: Connect to your Assignments/Tasks store
-        let whenString = due.map { Self.relativeFormatter.string(from: $0) } ?? "no due date"
+        let whenString = due.map { Self.relativeFormatter.localizedString(for: $0, relativeTo: Date()) } ?? "no due date"
         respond("Added task ‘\(title)’ with \(whenString).")
     }
 
     private func addReminder(title: String, when: Date?) {
         // TODO: Connect to Reminders store (or EventKit)
-        let whenString = when.map { Self.relativeFormatter.string(from: $0) } ?? "no time set"
+        let whenString = when.map { Self.relativeFormatter.localizedString(for: $0, relativeTo: Date()) } ?? "no time set"
         respond("I set a reminder ‘\(title)’ for \(whenString).")
     }
 
     private func scheduleMeeting(title: String, when: Date?, attendees: [String]) {
         // TODO: Connect to your meetings/calendar integration
-        let whenString = when.map { Self.relativeFormatter.string(from: $0) } ?? "no time set"
+        let whenString = when.map { Self.relativeFormatter.localizedString(for: $0, relativeTo: Date()) } ?? "no time set"
         respond("Scheduled ‘\(title)’ for \(whenString).")
     }
 
@@ -223,3 +238,4 @@ final class VoiceAssistantViewModel: ObservableObject {
         return f
     }()
 }
+

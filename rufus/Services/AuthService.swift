@@ -1,8 +1,4 @@
-//
-//  AuthService.swift
-//  rufus
-//
-//  Created by Mubashir Osmani on 2025-08-03.
+// user authentication
 
 import Foundation
 import Supabase
@@ -12,6 +8,11 @@ import GoogleSignIn
 #if canImport(UIKit)
 import UIKit
 #endif
+
+let supabase = SupabaseClient(
+  supabaseURL: URL(string: "https://vmzmwybvcybsiplmmelv.supabase.co")!,
+  supabaseKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtem13eWJ2Y3lic2lwbG1tZWx2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU1NDQ3MTEsImV4cCI6MjA2MTEyMDcxMX0.SVWjQUjA5km-db31SwNV0CLZAG0hM213OXIN11nlshQ"
+)
 
 @MainActor
 final class AuthService: ObservableObject {
@@ -71,33 +72,43 @@ final class AuthService: ObservableObject {
             throw AuthError.noViewController
         }
         
-        // Configure Google Sign-In with calendar scopes
+        // Use existing configuration
         guard let config = GIDSignIn.sharedInstance.configuration else {
             throw AuthError.noConfiguration
         }
+        GIDSignIn.sharedInstance.configuration = config
         
-        let configWithScopes = GIDConfiguration(
-            clientID: config.clientID,
-            serverClientID: config.serverClientID,
-            hostedDomain: config.hostedDomain,
-            openIDRealm: config.openIDRealm
-        )
-        
-        GIDSignIn.sharedInstance.configuration = configWithScopes
-        
+        // Begin sign-in
         let result = try await GIDSignIn.sharedInstance.signIn(withPresenting: presentingViewController)
         
-        // Request calendar scopes if not already granted
+        // Ensure calendar scope is granted before extracting tokens
         let calendarScope = "https://www.googleapis.com/auth/calendar.readonly"
         if result.user.grantedScopes?.contains(calendarScope) != true {
+            // Request additional scope
             try await requestCalendarScopes()
+            
+            // Refresh tokens so new access token includes the newly granted scope
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                result.user.refreshTokensIfNeeded { _, error in
+                    if let error = error {
+                        continuation.resume(throwing: error)
+                    } else {
+                        continuation.resume(returning: ())
+                    }
+                }
+            }
         }
         
-        guard let idToken = result.user.idToken?.tokenString else {
+        // Use the current user after potential scope expansion
+        guard let currentUser = GIDSignIn.sharedInstance.currentUser else {
+            throw AuthError.noConfiguration
+        }
+        
+        guard let idToken = currentUser.idToken?.tokenString else {
             throw AuthError.noIdToken
         }
         
-        let accessToken = result.user.accessToken.tokenString
+        let accessToken = currentUser.accessToken.tokenString
         
         let session = try await client.auth.signInWithIdToken(
             credentials: .init(
