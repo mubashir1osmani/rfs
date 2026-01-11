@@ -14,12 +14,12 @@ import UIKit
 #endif
 
 struct CalendarConnectionsView: View {
-    @StateObject private var calendarService = CalendarService()
+    @StateObject private var calendarService = CalendarService.shared
     @StateObject private var authService = AuthService.shared
     @State private var showingGoogleSignIn = false
     @State private var showingAlert = false
     @State private var alertMessage = ""
-    
+
     var body: some View {
         Form {
             Section(header: Text("Calendar Connections")) {
@@ -41,7 +41,7 @@ struct CalendarConnectionsView: View {
                     
                     if !calendarService.hasCalendarAccess {
                         Button("Connect") {
-                            calendarService.requestCalendarPermission()
+                            Task { await calendarService.requestCalendarPermission() }
                         }
                         .buttonStyle(.bordered)
                         .controlSize(.small)
@@ -69,20 +69,20 @@ struct CalendarConnectionsView: View {
                     
                     if !isGoogleSignedIn {
                         Button("Connect") {
-                            signInWithGoogle()
+                            Task { await signInWithGoogle() }
                         }
                         .buttonStyle(.bordered)
                         .controlSize(.small)
                     } else if !hasCalendarScopes {
                         Button("Enable Calendar") {
-                            requestCalendarPermissions()
+                            Task { await requestCalendarPermissions() }
                         }
                         .buttonStyle(.bordered)
                         .controlSize(.small)
                         .foregroundColor(.orange)
                     } else {
                         Button("Disconnect") {
-                            signOutFromGoogle()
+                            Task { await signOutFromGoogle() }
                         }
                         .buttonStyle(.bordered)
                         .controlSize(.small)
@@ -105,6 +105,14 @@ struct CalendarConnectionsView: View {
                             Text("Syncing calendars...")
                                 .foregroundColor(.secondary)
                         }
+                    } else {
+                        HStack {
+                            Image(systemName: "checkmark.circle")
+                                .foregroundColor(.green)
+                            Text("Last updated \(calendarService.lastSyncDescription)")
+                                .foregroundColor(.secondary)
+                        }
+                        .font(.caption)
                     }
                 }
             }
@@ -159,60 +167,50 @@ struct CalendarConnectionsView: View {
         }
     }
     
-    private func signInWithGoogle() {
-        Task {
-            do {
-                // First, sign in with Google (this will request calendar scopes)
-                try await authService.signInWithGoogle()
-                
-                // Then load Google Calendar events
-                calendarService.loadGoogleCalendarEvents()
-                
-                alertMessage = "Successfully connected to Google Calendar!"
-                showingAlert = true
-            } catch {
-                alertMessage = "Failed to connect to Google Calendar: \(error.localizedDescription)"
-                showingAlert = true
-            }
+    private func signInWithGoogle() async {
+        do {
+            try await authService.signInWithGoogle()
+            await calendarService.loadUpcomingEvents()
+
+            alertMessage = "Successfully connected to Google Calendar!"
+            showingAlert = true
+        } catch {
+            alertMessage = "Failed to connect to Google Calendar: \(error.localizedDescription)"
+            showingAlert = true
         }
     }
-    
-    private func signOutFromGoogle() {
+
+    private func signOutFromGoogle() async {
         GIDSignIn.sharedInstance.signOut()
-        
-        // Remove Google Calendar events from the service
-        calendarService.calendarEvents = calendarService.calendarEvents.filter { $0.source == .apple }
-        
+        await calendarService.loadUpcomingEvents()
+
         alertMessage = "Disconnected from Google Calendar"
         showingAlert = true
     }
-    
-    private func requestCalendarPermissions() {
-        Task {
-            do {
-                guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                      let presentingViewController = windowScene.windows.first?.rootViewController else {
-                    alertMessage = "Unable to request calendar permissions"
-                    showingAlert = true
-                    return
-                }
-                
-                let additionalScopes = ["https://www.googleapis.com/auth/calendar.readonly"]
-                
-                _ = try await GIDSignIn.sharedInstance.signIn(withPresenting: presentingViewController, 
-                                                             hint: nil,
-                                                             additionalScopes: additionalScopes)
-                
-                // After granting permissions, load calendar events
-                calendarService.loadGoogleCalendarEvents()
-                
-                alertMessage = "Calendar permissions granted successfully!"
+
+    private func requestCalendarPermissions() async {
+        do {
+            guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                  let presentingViewController = windowScene.windows.first?.rootViewController else {
+                alertMessage = "Unable to request calendar permissions"
                 showingAlert = true
-                
-            } catch {
-                alertMessage = "Failed to request calendar permissions: \(error.localizedDescription)"
-                showingAlert = true
+                return
             }
+
+            let additionalScopes = ["https://www.googleapis.com/auth/calendar.readonly"]
+
+            _ = try await GIDSignIn.sharedInstance.signIn(withPresenting: presentingViewController,
+                                                         hint: nil,
+                                                         additionalScopes: additionalScopes)
+
+            await calendarService.loadUpcomingEvents()
+
+            alertMessage = "Calendar permissions granted successfully!"
+            showingAlert = true
+
+        } catch {
+            alertMessage = "Failed to request calendar permissions: \(error.localizedDescription)"
+            showingAlert = true
         }
     }
 }

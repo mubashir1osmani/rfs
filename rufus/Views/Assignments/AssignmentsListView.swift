@@ -45,7 +45,7 @@ struct AssignmentsListView: View {
                             FilterChip(
                                 title: "All",
                                 isSelected: selectedCourse == nil,
-                                color: .gray
+                                icon: "list.bullet"
                             ) {
                                 selectedCourse = nil
                             }
@@ -55,7 +55,7 @@ struct AssignmentsListView: View {
                                 FilterChip(
                                     title: course.code.isEmpty ? course.name : course.code,
                                     isSelected: selectedCourse?.id == course.id,
-                                    color: Color(hex: course.color)
+                                    icon: "book.fill"
                                 ) {
                                     selectedCourse = selectedCourse?.id == course.id ? nil : course
                                 }
@@ -121,27 +121,6 @@ struct AssignmentsListView: View {
                 modelContext.delete(filteredAssignments[index])
             }
         }
-    }
-}
-
-struct FilterChip: View {
-    let title: String
-    let isSelected: Bool
-    let color: Color
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(.caption)
-                .fontWeight(.medium)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(isSelected ? color : Color.secondary.opacity(0.2))
-                .foregroundColor(isSelected ? .white : .primary)
-                .clipShape(Capsule())
-        }
-        .buttonStyle(PlainButtonStyle())
     }
 }
 

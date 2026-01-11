@@ -11,7 +11,7 @@ import GoogleSignIn
 struct CalendarWidgetView: View {
     @Binding var selectedDate: Date
     let assignments: [Assignment]
-    @StateObject private var calendarService = CalendarService()
+    @ObservedObject private var calendarService = CalendarService.shared
     @State private var showingEventDetail: CalendarEvent?
     
     var body: some View {
@@ -110,9 +110,6 @@ struct CalendarWidgetView: View {
         }
         .onAppear {
             calendarService.checkCalendarAccess()
-            if GIDSignIn.sharedInstance.currentUser != nil {
-                calendarService.loadGoogleCalendarEvents()
-            }
         }
     }
     

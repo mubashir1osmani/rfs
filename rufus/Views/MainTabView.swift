@@ -2,40 +2,58 @@
 //  MainTabView.swift
 //  rufus
 //
-//  Created by AI Assistant on 2025-07-25.
 //
 
 import SwiftUI
 
 struct MainTabView: View {
+    @State private var isVoiceSheetPresented = false
+
     var body: some View {
         TabView {
             DashboardView()
-                .tabItem {
-                    Image(systemName: "house")
-                    Text("Dashboard")
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            isVoiceSheetPresented = true
+                        } label: {
+                            Image(systemName: "mic.fill")
+                        }
+                        .accessibilityLabel("Voice Assistant")
+                    }
                 }
-            
+                .sheet(isPresented: $isVoiceSheetPresented) {
+                    VoiceAssistantView()
+                }
+                .tabItem {
+                    Image(systemName: "house.fill")
+                    Text("Home")
+                }
+
             NavigationStack {
                 AssignmentsListView()
             }
             .tabItem {
-                Image(systemName: "list.bullet")
-                Text("Assignments")
+                Image(systemName: "list.bullet.clipboard.fill")
+                Text("Tasks")
             }
-            
-            NavigationStack {
-                CoursesListView()
-            }
-            .tabItem {
-                Image(systemName: "book.closed")
-                Text("Courses")
-            }
-            
+
+            GoalsDashboardView()
+                .tabItem {
+                    Image(systemName: "target")
+                    Text("Goals")
+                }
+
+            KnowledgeBaseView()
+                .tabItem {
+                    Image(systemName: "brain.head.profile")
+                    Text("Notes")
+                }
+
             ChatView()
                 .tabItem {
-                    Image(systemName: "message.circle")
-                    Text("AI Chat")
+                    Image(systemName: "sparkles")
+                    Text("Chat")
                 }
         }
     }

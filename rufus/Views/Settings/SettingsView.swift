@@ -47,10 +47,18 @@ struct SettingsView: View {
             }
             
             Section("AI Assistant") {
+                NavigationLink(destination: AssistantCustomizationView()) {
+                    HStack {
+                        Image(systemName: "person.crop.circle.badge.sparkles")
+                            .foregroundColor(.purple)
+                        Text("Customize Assistant")
+                    }
+                }
+
                 NavigationLink(destination: LLMSettingsView()) {
                     HStack {
                         Image(systemName: "brain.head.profile")
-                            .foregroundColor(.purple)
+                            .foregroundColor(.blue)
                         Text("LLM Settings")
                     }
                 }

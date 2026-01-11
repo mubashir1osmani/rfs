@@ -9,9 +9,9 @@ import SwiftUI
 import SwiftData
 
 struct ChatView: View {
-    @StateObject private var chatService = ChatService()
-    @StateObject private var speechService = SpeechService()
-    @StateObject private var textToSpeechService = TextToSpeechService()
+    @ObservedObject private var chatService = ChatService.shared
+    @ObservedObject private var speechService = SpeechService.shared
+    @ObservedObject private var textToSpeechService = TextToSpeechService.shared
     
     @Environment(\.modelContext) private var modelContext
     @State private var showingSettings = false
@@ -123,7 +123,7 @@ struct ChatView: View {
             sendTextMessage(speechService.transcribedText)
         } else {
             textToSpeechService.stopSpeaking()
-            speechService.startRecording()
+            try? speechService.startRecording()
             assistantState = .listening
         }
     }
@@ -136,7 +136,11 @@ struct ChatView: View {
         }
         
         Task {
-            await chatService.sendMessage(trimmedMessage)
+            do {
+                try await chatService.sendMessage(trimmedMessage)
+            } catch {
+                print("Error sending message: \(error)")
+            }
             assistantState = .idle
         }
     }

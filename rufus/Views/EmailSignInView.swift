@@ -17,6 +17,8 @@ struct EmailSignInView: View {
     @State private var alertMessage = ""
     @Environment(\.dismiss) private var dismiss
 
+    var onSignInSuccess: (() -> Void)?
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -132,8 +134,9 @@ struct EmailSignInView: View {
                 try await authService.signIn(email: email, password: password)
             }
             
-            // Dismiss the view on successful authentication
+            // Call success callback and dismiss the view on successful authentication
             DispatchQueue.main.async {
+                onSignInSuccess?()
                 dismiss()
             }
         } catch {

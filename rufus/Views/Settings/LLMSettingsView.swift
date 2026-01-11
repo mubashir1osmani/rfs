@@ -9,8 +9,8 @@ import SwiftUI
 import SwiftData
 
 struct LLMSettingsView: View {
-    @StateObject private var groqService = GroqService.shared
-    @State private var apiKey: String = KeychainHelper.shared.read(key: "groqApiKey") ?? UserDefaults.standard.string(forKey: "groqApiKey") ?? ""
+    @ObservedObject private var groqService = GroqService.shared
+    @State private var apiKey: String = KeychainHelper.shared.read(forKey: "groqApiKey") ?? UserDefaults.standard.string(forKey: "groqApiKey") ?? ""
     @State private var selectedModel: String = UserDefaults.standard.string(forKey: "groqSelectedModel") ?? "llama3-70b-8192"
     @State private var showApiKeySaved: Bool = false
     
@@ -25,7 +25,7 @@ struct LLMSettingsView: View {
                 Toggle("Enable LLM Features", isOn: $llmEnabled)
                     .onChange(of: llmEnabled) { newValue, _ in
                         // If enabling and no API key, show info
-                        if newValue && !groqService.hasValidApiKey() {
+                        if newValue && !groqService.hasValidApiKey {
                             showApiKeySaved = true
                         }
                     }
@@ -44,9 +44,9 @@ struct LLMSettingsView: View {
                     }
                     
                     if showApiKeySaved {
-                        Text(groqService.hasValidApiKey() ? "API key saved" : "Please enter an API key")
+                        Text(groqService.hasValidApiKey ? "API key saved" : "Please enter an API key")
                             .font(.caption)
-                            .foregroundColor(groqService.hasValidApiKey() ? .green : .orange)
+                            .foregroundColor(groqService.hasValidApiKey ? .green : .orange)
                     }
                     
                     Picker("Model", selection: $selectedModel) {
@@ -61,7 +61,7 @@ struct LLMSettingsView: View {
                 }
             }
             
-            if llmEnabled && groqService.hasValidApiKey() {
+            if llmEnabled && groqService.hasValidApiKey {
                 Section(header: Text("Smart Features")) {
                     Toggle("Smart Assignment Reminders", isOn: $smartRemindersEnabled)
                     
@@ -221,7 +221,7 @@ struct AskRufusView: View {
         
         Task {
             do {
-                let response = try await groqService.generateAssistantResponse(prompt: userQuery, context: context)
+                let response = try await groqService.generateAssistantResponse(prompt: userQuery, conversationHistory: [])
                 
                 await MainActor.run {
                     responseText = response

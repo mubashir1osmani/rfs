@@ -81,7 +81,7 @@ struct SmartReminderView: View {
             do {
                 let reminder = try await GroqService.shared.generateSmartReminder(
                     for: assignment,
-                    courses: courses
+                    with: "Context about the assignment"
                 )
                 
                 await MainActor.run {
