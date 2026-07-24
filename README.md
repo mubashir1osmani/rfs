@@ -47,18 +47,22 @@ NORI_APP_TOKEN=
 NORI_USER_ID=local-ios-user
 ```
 
-Use a LAN or deployed HTTPS URL on a physical iPhone. Keep `OPENAI_API_KEY`, Google client secrets, and refresh tokens on the server only.
+For Release/TestFlight builds, set the user-defined build settings `NORI_ASSISTANT_URL` and `NORI_EXECUTE_URL` to deployed HTTPS endpoints. Enter `NORI_APP_TOKEN` in Nori’s **Settings → Backend Access** screen; it is stored in the device Keychain instead of the app bundle. Use a LAN URL only for local development. Keep OpenAI and Google credentials on the server.
 
 ## Validate
 
 ```bash
 npm test
+node --check server/index.mjs
+swiftc -parse $(find Nori -name '*.swift' -print)
 plutil -lint Nori/Resources/Info.plist Nori.xcodeproj/project.pbxproj
 xcodebuild -project Nori.xcodeproj -scheme Nori -sdk iphonesimulator build CODE_SIGNING_ALLOWED=NO
 ```
 
 The final `xcodebuild` command requires the full Xcode application, not only Command Line Tools.
 
-## Production hardening
+## Release readiness
 
-The included backend is suitable for a single-user prototype. A multi-user deployment must add user authentication, per-user encrypted OAuth storage, durable idempotency receipts, token revocation, and production observability.
+The app includes protected local persistence, Keychain credentials, bounded history, explicit external-action approval, timeout/error handling, an App Store icon, and an Apple privacy manifest. The server includes strict input limits, constant-time token authentication, rate limiting, request IDs, safe production errors, health/readiness probes, upstream timeouts, and graceful shutdown.
+
+See `PRODUCTION.md` before shipping. The bundled backend is designed for one personal Google account on one server instance. A public multi-user service still requires real user authentication, per-user OAuth storage, durable distributed idempotency, abuse controls, and a privacy policy.

@@ -10,20 +10,25 @@ final class AppViewModel: ObservableObject {
     @Published var composerText = ""
     @Published var isThinking = false
     @Published var actionStates: [String: ActionState] = [:]
-    @Published var connections = ConnectionState()
     @Published var autonomyEnabled = true
     @Published var activeError: String?
 
     let speechRecognizer = SpeechRecognizer()
     private let assistantService: AssistantService
     private let integrationService: IntegrationService
+    private let stateStore: AppStateStore
+    private var hasRestoredState = false
+    private var persistenceRevision: UInt64 = 0
 
     init(
         assistantService: AssistantService = AssistantService(),
-        integrationService: IntegrationService = IntegrationService()
+        integrationService: IntegrationService = IntegrationService(),
+        stateStore: AppStateStore = AppStateStore()
     ) {
         self.assistantService = assistantService
         self.integrationService = integrationService
+        self.stateStore = stateStore
+        Task { await restoreState() }
     }
 
     var completedCount: Int {
@@ -47,20 +52,27 @@ final class AppViewModel: ObservableObject {
         composerText = ""
         selectedTab = .assistant
         messages.append(ChatMessage(id: UUID().uuidString, role: .user, text: text, actions: []))
+        persistState()
         isThinking = true
 
         Task {
-            let reply = await assistantService.ask(
-                message: text,
-                context: AssistantContext(tasks: tasks, calendar: calendarBlocks, currentDate: Date())
-            )
-            messages.append(ChatMessage(id: UUID().uuidString, role: .assistant, text: reply.message, actions: reply.actions))
-            isThinking = false
+            defer { isThinking = false }
+            do {
+                let reply = try await assistantService.ask(
+                    message: text,
+                    context: AssistantContext(tasks: tasks, calendar: calendarBlocks, currentDate: Date())
+                )
+                messages.append(ChatMessage(id: UUID().uuidString, role: .assistant, text: reply.message, actions: reply.actions))
+                trimMessageHistory()
 
-            if autonomyEnabled {
-                for action in reply.actions where action.kind == .task {
-                    await execute(action, shouldUseIntegration: false)
+                if autonomyEnabled {
+                    for action in reply.actions where action.kind == .task {
+                        await execute(action, shouldUseIntegration: false)
+                    }
                 }
+                persistState()
+            } catch {
+                activeError = error.localizedDescription
             }
         }
     }
@@ -99,6 +111,7 @@ final class AppViewModel: ObservableObject {
                 if shouldUseIntegration { try await integrationService.execute(action) }
             }
             actionStates[action.id] = .completed
+            persistState()
         } catch {
             activeError = error.localizedDescription
         }
@@ -106,20 +119,65 @@ final class AppViewModel: ObservableObject {
 
     func dismiss(_ action: AssistantAction) {
         actionStates[action.id] = .dismissed
+        persistState()
     }
 
     func toggleTask(_ task: TaskItem) {
         guard let index = tasks.firstIndex(where: { $0.id == task.id }) else { return }
         tasks[index].isCompleted.toggle()
+        persistState()
     }
 
     func addTask(title: String) {
         let cleanTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !cleanTitle.isEmpty else { return }
         tasks.append(TaskItem(id: UUID().uuidString, title: cleanTitle, dueLabel: "Today", category: .personal, isCompleted: false))
+        persistState()
     }
 
-    func toggleConnection(_ keyPath: WritableKeyPath<ConnectionState, Bool>) {
-        connections[keyPath: keyPath].toggle()
+    func setAutonomyEnabled(_ isEnabled: Bool) {
+        autonomyEnabled = isEnabled
+        persistState()
+    }
+
+    private func restoreState() async {
+        defer { hasRestoredState = true }
+        do {
+            guard let state = try await stateStore.load() else { return }
+            tasks = state.tasks
+            calendarBlocks = state.calendarBlocks
+            messages = state.messages.isEmpty ? [SeedData.welcomeMessage] : state.messages
+            actionStates = state.actionStates
+            autonomyEnabled = state.autonomyEnabled
+            trimMessageHistory()
+        } catch {
+            activeError = "Your saved Nori data could not be loaded. A fresh session has been started."
+        }
+    }
+
+    private func persistState() {
+        guard hasRestoredState else { return }
+        persistenceRevision += 1
+        let revision = persistenceRevision
+        let state = PersistedAppState(
+            tasks: tasks,
+            calendarBlocks: calendarBlocks,
+            messages: Array(messages.suffix(100)),
+            actionStates: actionStates,
+            autonomyEnabled: autonomyEnabled
+        )
+        Task {
+            do {
+                try await stateStore.save(state, revision: revision)
+            } catch {
+                activeError = "Nori could not save your latest changes."
+            }
+        }
+    }
+
+    private func trimMessageHistory() {
+        if messages.count > 100 {
+            messages = Array(messages.suffix(100))
+        }
     }
 }

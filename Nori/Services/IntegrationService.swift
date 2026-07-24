@@ -6,12 +6,14 @@ enum IntegrationError: LocalizedError {
     case calendarAccessDenied
     case missingEmailRecipient
     case actionFailed
+    case remoteFailure(String)
 
     var errorDescription: String? {
         switch self {
         case .calendarAccessDenied: "Allow Calendar access in Settings to add this event."
         case .missingEmailRecipient: "Add a recipient before sending this email."
         case .actionFailed: "Nori couldn’t complete that action. Please try again."
+        case let .remoteFailure(message): message
         }
     }
 }
@@ -31,7 +33,10 @@ final class IntegrationService {
     }
 
     func execute(_ action: AssistantAction) async throws {
-        if await executeRemotely(action) { return }
+        if configuration.executeURL != nil {
+            try await executeRemotely(action)
+            return
+        }
         switch action.kind {
         case .calendar, .meeting:
             try await addToSystemCalendar(action)
@@ -42,18 +47,26 @@ final class IntegrationService {
         }
     }
 
-    private func executeRemotely(_ action: AssistantAction) async -> Bool {
-        guard let url = configuration.executeURL else { return false }
+    private func executeRemotely(_ action: AssistantAction) async throws {
+        guard let url = configuration.executeURL else { throw IntegrationError.actionFailed }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
+        request.timeoutInterval = 35
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(configuration.userID, forHTTPHeaderField: "X-User-Id")
         if let appToken = configuration.appToken {
             request.setValue("Bearer \(appToken)", forHTTPHeaderField: "Authorization")
         }
-        request.httpBody = try? JSONEncoder().encode(ExecutionRequest(action: action))
-        guard let (_, response) = try? await URLSession.shared.data(for: request),
-              let httpResponse = response as? HTTPURLResponse else { return false }
-        return httpResponse.statusCode == 200
+        request.httpBody = try JSONEncoder().encode(ExecutionRequest(action: action))
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse else { throw IntegrationError.actionFailed }
+        guard httpResponse.statusCode == 200 else {
+            struct ErrorEnvelope: Decodable { let error: String }
+            if let envelope = try? JSONDecoder().decode(ErrorEnvelope.self, from: data) {
+                throw IntegrationError.remoteFailure(envelope.error)
+            }
+            throw IntegrationError.actionFailed
+        }
     }
 
     private func addToSystemCalendar(_ action: AssistantAction) async throws {

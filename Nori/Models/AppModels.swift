@@ -97,8 +97,8 @@ struct AssistantAction: Identifiable, Codable, Hashable, Sendable {
     }
 }
 
-struct ChatMessage: Identifiable, Hashable, Sendable {
-    enum Role: Hashable, Sendable {
+struct ChatMessage: Identifiable, Codable, Hashable, Sendable {
+    enum Role: String, Codable, Hashable, Sendable {
         case assistant
         case user
     }
@@ -120,12 +120,15 @@ struct AssistantReply: Codable, Sendable {
     let actions: [AssistantAction]
 }
 
-enum ActionState: Hashable, Sendable {
+enum ActionState: String, Codable, Hashable, Sendable {
     case completed
     case dismissed
 }
 
-struct ConnectionState: Sendable {
-    var calendar = false
-    var gmail = false
+struct PersistedAppState: Codable, Sendable {
+    let tasks: [TaskItem]
+    let calendarBlocks: [CalendarBlock]
+    let messages: [ChatMessage]
+    let actionStates: [String: ActionState]
+    let autonomyEnabled: Bool
 }

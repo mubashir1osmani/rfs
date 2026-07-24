@@ -1,5 +1,17 @@
 import Foundation
 
+enum AssistantServiceError: LocalizedError {
+    case invalidResponse
+    case requestFailed(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidResponse: "Nori received an invalid response. Please try again."
+        case let .requestFailed(message): message
+        }
+    }
+}
+
 actor AssistantService {
     private struct Request: Encodable {
         let message: String
@@ -12,28 +24,43 @@ actor AssistantService {
         self.configuration = configuration
     }
 
-    func ask(message: String, context: AssistantContext) async -> AssistantReply {
-        if let remoteReply = await remoteReply(message: message, context: context) {
-            return remoteReply
+    func ask(message: String, context: AssistantContext) async throws -> AssistantReply {
+        guard configuration.assistantURL != nil else {
+            return localReply(message: message, context: context)
         }
-        return localReply(message: message, context: context)
+        return try await remoteReply(message: message, context: context)
     }
 
-    private func remoteReply(message: String, context: AssistantContext) async -> AssistantReply? {
-        guard let url = configuration.assistantURL else { return nil }
+    private func remoteReply(message: String, context: AssistantContext) async throws -> AssistantReply {
+        guard let url = configuration.assistantURL else { throw AssistantServiceError.invalidResponse }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
+        request.timeoutInterval = 35
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue(configuration.userID, forHTTPHeaderField: "X-User-Id")
         if let appToken = configuration.appToken {
             request.setValue("Bearer \(appToken)", forHTTPHeaderField: "Authorization")
         }
-        request.httpBody = try? JSONEncoder.nori.encode(Request(message: message, context: context))
+        request.httpBody = try JSONEncoder.nori.encode(Request(message: message, context: context))
 
-        guard let (data, response) = try? await URLSession.shared.data(for: request),
-              let httpResponse = response as? HTTPURLResponse,
-              httpResponse.statusCode == 200 else { return nil }
-        return try? JSONDecoder.nori.decode(AssistantReply.self, from: data)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse else { throw AssistantServiceError.invalidResponse }
+        guard httpResponse.statusCode == 200 else {
+            throw AssistantServiceError.requestFailed(errorMessage(from: data, statusCode: httpResponse.statusCode))
+        }
+        do {
+            return try JSONDecoder.nori.decode(AssistantReply.self, from: data)
+        } catch {
+            throw AssistantServiceError.invalidResponse
+        }
+    }
+
+    private func errorMessage(from data: Data, statusCode: Int) -> String {
+        struct ErrorEnvelope: Decodable { let error: String }
+        if let envelope = try? JSONDecoder().decode(ErrorEnvelope.self, from: data) {
+            return envelope.error
+        }
+        return "Nori’s service is unavailable (\(statusCode)). Please try again."
     }
 
     private func localReply(message: String, context: AssistantContext) -> AssistantReply {

@@ -2,20 +2,23 @@ import SwiftUI
 
 struct SettingsView: View {
     @ObservedObject var viewModel: AppViewModel
+    private let configuration = AppConfiguration.current
+    @State private var backendToken = ""
+    @State private var hasBackendToken = CredentialStore.appToken() != nil
 
     var body: some View {
         NavigationStack {
             List {
                 Section {
                     HStack(spacing: 13) {
-                        Text("M")
+                        Image(systemName: "person.fill")
                             .font(.headline.weight(.heavy))
                             .foregroundStyle(Color.noriBackground)
                             .frame(width: 48, height: 48)
                             .background(Color.noriMint, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("Mubashir").font(.headline).foregroundStyle(Color.noriText)
-                            Text("Student · Builder · Getting things done")
+                            Text("Your Nori").font(.headline).foregroundStyle(Color.noriText)
+                            Text("Personal planning workspace")
                                 .font(.caption)
                                 .foregroundStyle(Color.noriMuted)
                         }
@@ -24,7 +27,10 @@ struct SettingsView: View {
                 }
 
                 Section("AUTONOMY") {
-                    Toggle(isOn: $viewModel.autonomyEnabled) {
+                    Toggle(isOn: Binding(
+                        get: { viewModel.autonomyEnabled },
+                        set: viewModel.setAutonomyEnabled
+                    )) {
                         Label {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("Act on safe requests").foregroundStyle(Color.noriText)
@@ -42,18 +48,18 @@ struct SettingsView: View {
                 Section("CONNECTIONS") {
                     connectionRow(
                         title: "System Calendar",
-                        subtitle: "Syncs with Google when configured in iOS",
+                        subtitle: "Permission is requested when you approve an event",
                         icon: "calendar",
                         color: .noriBlue,
-                        isConnected: viewModel.connections.calendar
-                    ) { viewModel.toggleConnection(\.calendar) }
+                        status: "On device"
+                    )
                     connectionRow(
                         title: "Gmail",
-                        subtitle: "Direct send through the secure backend",
+                        subtitle: configuration.usesRemoteExecution ? "Direct send through your backend" : "Opens a reviewable Mail draft",
                         icon: "envelope",
                         color: .noriPeach,
-                        isConnected: viewModel.connections.gmail
-                    ) { viewModel.toggleConnection(\.gmail) }
+                        status: configuration.usesRemoteExecution ? "Backend" : "Mail app"
+                    )
                 }
 
                 Section("AI ENGINE") {
@@ -61,7 +67,7 @@ struct SettingsView: View {
                         Label("Nori Intelligence", systemImage: "brain.head.profile")
                             .font(.headline)
                             .foregroundStyle(Color.noriText)
-                        Text(AppConfiguration.current.assistantURL == nil ? "Smart local planner" : "Secure AI backend connected")
+                        Text(configuration.usesRemoteAssistant ? "AI backend configured" : "Smart local planner")
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(Color.noriGreen)
                         Text("Nori keeps private provider keys on the server and sends only the context needed to plan your request.")
@@ -69,6 +75,26 @@ struct SettingsView: View {
                             .foregroundStyle(Color.noriMuted)
                     }
                     .padding(.vertical, 5)
+                }
+
+                if configuration.usesRemoteAssistant || configuration.usesRemoteExecution {
+                    Section("BACKEND ACCESS") {
+                        SecureField("Access token", text: $backendToken)
+                            .textContentType(.password)
+                            .privacySensitive()
+                        Button(hasBackendToken ? "Replace secure token" : "Save secure token") {
+                            saveBackendToken()
+                        }
+                        .disabled(backendToken.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        if hasBackendToken {
+                            Button("Remove token", role: .destructive) {
+                                removeBackendToken()
+                            }
+                        }
+                        Text("The token stays in this device’s Keychain and is never bundled with the app.")
+                            .font(.caption)
+                            .foregroundStyle(Color.noriMuted)
+                    }
                 }
 
                 Section("APPROVAL BOUNDARY") {
@@ -87,13 +113,32 @@ struct SettingsView: View {
         }
     }
 
+    private func saveBackendToken() {
+        do {
+            try CredentialStore.setAppToken(backendToken)
+            backendToken = ""
+            hasBackendToken = true
+        } catch {
+            viewModel.activeError = error.localizedDescription
+        }
+    }
+
+    private func removeBackendToken() {
+        do {
+            try CredentialStore.setAppToken("")
+            backendToken = ""
+            hasBackendToken = false
+        } catch {
+            viewModel.activeError = error.localizedDescription
+        }
+    }
+
     private func connectionRow(
         title: String,
         subtitle: String,
         icon: String,
         color: Color,
-        isConnected: Bool,
-        action: @escaping () -> Void
+        status: String
     ) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
@@ -105,12 +150,12 @@ struct SettingsView: View {
                 Text(subtitle).font(.caption2).foregroundStyle(Color.noriMuted)
             }
             Spacer()
-            Button(isConnected ? "Connected" : "Connect", action: action)
+            Text(status)
                 .font(.caption.weight(.bold))
-                .foregroundStyle(isConnected ? Color.noriMint : Color.noriBackground)
+                .foregroundStyle(Color.noriMint)
                 .padding(.horizontal, 11)
                 .frame(minHeight: 40)
-                .background(isConnected ? Color.noriGreen.opacity(0.14) : Color.noriMint, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+                .background(Color.noriGreen.opacity(0.14), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
         }
         .padding(.vertical, 3)
     }

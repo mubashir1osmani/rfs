@@ -4,6 +4,7 @@ struct AssistantView: View {
     @ObservedObject var viewModel: AppViewModel
     @ObservedObject private var speechRecognizer: SpeechRecognizer
     @FocusState private var composerFocused: Bool
+    private let configuration = AppConfiguration.current
 
     init(viewModel: AppViewModel) {
         self.viewModel = viewModel
@@ -70,7 +71,7 @@ struct AssistantView: View {
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Label("Online", systemImage: "circle.fill")
+                    Label(configuration.usesRemoteAssistant ? "AI backend" : "Local", systemImage: "circle.fill")
                         .font(.caption2.weight(.bold))
                         .foregroundStyle(Color.noriMint)
                         .padding(.horizontal, 10)
