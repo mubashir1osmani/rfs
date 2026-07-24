@@ -1,69 +1,64 @@
-# Nori — autonomous personal assistant
+# Nori — native iOS personal assistant
 
-Nori is an Expo / React Native assistant for students and working professionals. It turns natural language into tasks, protected focus time, meeting invites, and reviewable email drafts.
+Nori is a native SwiftUI app for students and working professionals. It turns spoken or typed requests into tasks, focus blocks, meeting invites, and reviewable email actions.
 
-## Run
+## Requirements
 
-Use Node.js 20.19.4 or newer.
+- macOS with Xcode 16 or newer
+- iOS 17 or newer
+- An Apple development team for device builds
+- Node.js 20 or newer only when running the optional backend
 
-```bash
-npm install
-npm run ios
-```
+## Run the iOS app
 
-For a clean demo session, run `npm run demo`, open the app, and tap **Watch a 20-second action demo** on Home.
+1. Open `Nori.xcodeproj` in Xcode.
+2. Select the **Nori** target and choose your development team under **Signing & Capabilities**.
+3. Choose an iPhone simulator or connected iPhone.
+4. Press **Run**.
 
-To verify the project:
+The app works immediately with its local natural-language planner. Microphone, speech recognition, and calendar permissions are requested only when those features are used.
 
-```bash
-npm run typecheck
-npm run test:server
-npm run build:ios
-```
+## Native capabilities
 
-## Assistant capabilities
+- SwiftUI interface with Dynamic Type, VoiceOver labels, native tab navigation, sheets, alerts, and keyboard behavior.
+- Live voice requests through `Speech` and `AVFoundation`.
+- Native calendar writes through `EventKit`. Events sync to Google Calendar when the user's Google account is enabled in iOS Calendar settings.
+- Secure remote AI planning through `URLSession`, with a useful local fallback.
+- Direct Google Calendar and Gmail execution through the optional backend.
+- Explicit approval cards before meetings, emails, or external calendar changes.
+- One-tap in-app demo covering every action type.
 
-- Converts natural language into tasks and adds safe local actions automatically.
-- Plans a day around open priorities and proposes multiple time blocks.
-- Creates Google Calendar events with titles, times, durations, notes, and guests.
-- Builds meeting invites from requests such as `Book a 30 minute meeting with alex@example.com tomorrow at 3 PM`.
-- Produces reviewable email drafts and sends approved messages through Gmail.
-- Supports spoken requests through iOS keyboard dictation.
-- Keeps all external communication behind a visible approval boundary.
+## Connect the backend
 
-The app includes a deterministic local planner and native Calendar/Mail handoffs, so every workflow remains demonstrable without an account or API key.
-
-## Run the AI and Google backend
-
-The repository includes a dependency-free Node server using the OpenAI Responses API, structured action outputs, Google Calendar API, and Gmail API.
+The dependency-free Node server uses the OpenAI Responses API, Google Calendar API, and Gmail API.
 
 ```bash
 cp .env.example .env
-# Fill in the server credentials in .env
+# Add your server credentials to .env
 npm run server:env
 ```
 
-In a second terminal, start the app with the same `.env` file:
+In Xcode, edit the **Nori** scheme and add these environment variables to **Run → Arguments**:
 
-```bash
-npm start
+```text
+NORI_ASSISTANT_URL=http://127.0.0.1:8787/assistant
+NORI_EXECUTE_URL=http://127.0.0.1:8787/execute
+NORI_APP_TOKEN=
+NORI_USER_ID=local-ios-user
 ```
 
-`OPENAI_API_KEY` enables model-backed planning. Without it, the mobile app automatically uses its local planner. `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_REFRESH_TOKEN` enable direct execution; without them, the app opens Google Calendar or Mail for manual confirmation.
+Use a LAN or deployed HTTPS URL on a physical iPhone. Keep `OPENAI_API_KEY`, Google client secrets, and refresh tokens on the server only.
 
-For Google, authorize these scopes when generating the refresh token:
+## Validate
 
-- `https://www.googleapis.com/auth/calendar.events`
-- `https://www.googleapis.com/auth/gmail.send`
+```bash
+npm test
+plutil -lint Nori/Resources/Info.plist Nori.xcodeproj/project.pbxproj
+xcodebuild -project Nori.xcodeproj -scheme Nori -sdk iphonesimulator build CODE_SIGNING_ALLOWED=NO
+```
 
-Use a LAN or deployed HTTPS server URL instead of `localhost` on a physical iPhone.
+The final `xcodebuild` command requires the full Xcode application, not only Command Line Tools.
 
-## Production integrations
+## Production hardening
 
-The included server is suitable for a single-user prototype. A multi-user production deployment must:
-
-1. Complete Google OAuth with Calendar and Gmail scopes.
-2. Store encrypted refresh tokens per user.
-3. Authenticate every mobile request with a user session rather than a public app token.
-4. Persist execution receipts and idempotency keys in a database.
-5. Preserve the review step for messages, guests, and destructive calendar changes.
+The included backend is suitable for a single-user prototype. A multi-user deployment must add user authentication, per-user encrypted OAuth storage, durable idempotency receipts, token revocation, and production observability.
