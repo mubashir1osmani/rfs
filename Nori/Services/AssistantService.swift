@@ -82,6 +82,8 @@ actor AssistantService {
     You are Nori, an action-oriented personal assistant for students and working professionals.
     Return a short helpful message and zero or more typed actions. Use ISO 8601 timestamps with timezone offsets.
     Tasks are safe local actions. Calendar changes, meeting invitations, and emails must remain visible for approval.
+    When the user says time is important, sacred, non-negotiable, or protected, set protectionReason on the calendar action.
+    Never schedule a new action over a protected calendar block unless the user explicitly chooses to move that block.
     Never claim an external action happened. Draft concise professional emails and avoid overlapping calendar events.
     """
 
@@ -107,11 +109,12 @@ actor AssistantService {
                             "durationMinutes": ["type": ["integer", "null"]],
                             "notes": ["type": ["string", "null"]],
                             "attendees": ["type": ["array", "null"], "items": ["type": "string"]],
+                            "protectionReason": ["type": ["string", "null"]],
                             "to": ["type": ["string", "null"]],
                             "subject": ["type": ["string", "null"]],
                             "body": ["type": ["string", "null"]],
                         ],
-                        "required": ["id", "kind", "title", "dueLabel", "category", "start", "durationMinutes", "notes", "attendees", "to", "subject", "body"],
+                        "required": ["id", "kind", "title", "dueLabel", "category", "start", "durationMinutes", "notes", "attendees", "protectionReason", "to", "subject", "body"],
                     ],
                 ],
             ],
@@ -202,7 +205,8 @@ actor AssistantService {
             start: date(hour: components.hour, minute: components.minute, dayOffset: dayOffset),
             durationMinutes: duration(in: message, fallback: kind == .meeting ? 30 : 60),
             notes: kind == .meeting ? "Meeting organized with Nori" : "Protected focus time planned with Nori",
-            attendees: firstEmail(in: message).map { [$0] } ?? []
+            attendees: firstEmail(in: message).map { [$0] } ?? [],
+            protectionReason: protectionReason(in: message)
         )
     }
 
@@ -260,6 +264,17 @@ actor AssistantService {
         if ["study", "class", "lecture", "exam", "assignment", "school"].contains(where: lowercased.contains) { return .school }
         if ["work", "client", "team", "project", "brief", "report"].contains(where: lowercased.contains) { return .work }
         return .personal
+    }
+
+    private func protectionReason(in message: String) -> String? {
+        let lowercased = message.lowercased()
+        guard ["protect", "protected", "sacred", "non-negotiable", "do not move"].contains(where: lowercased.contains) else {
+            return nil
+        }
+        if lowercased.contains("exam") || lowercased.contains("study") { return "Exam or study prep" }
+        if lowercased.contains("presentation") { return "Presentation prep" }
+        if lowercased.contains("family") || lowercased.contains("personal") { return "Family or personal time" }
+        return "Deep work"
     }
 
     private func date(hour: Int, minute: Int, dayOffset: Int = 0) -> Date {

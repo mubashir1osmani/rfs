@@ -24,6 +24,10 @@
 	<true/>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.nori.assistant.schedule-refresh</string>
+	</array>
 	<key>NORIGoogleClientID</key>
 	<string>$(NORI_GOOGLE_CLIENT_ID)</string>
 	<key>NORIGoogleRedirectScheme</key>
@@ -40,9 +44,9 @@
 		</dict>
 	</array>
 	<key>NSCalendarsFullAccessUsageDescription</key>
-	<string>Nori adds approved focus blocks and meetings to your calendar.</string>
+	<string>Nori reads your schedule to protect important time and adds only events you approve.</string>
 	<key>NSCalendarsUsageDescription</key>
-	<string>Nori adds approved focus blocks and meetings to your calendar.</string>
+	<string>Nori reads your schedule to protect important time and adds only events you approve.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Nori streams microphone audio during an active Realtime assistant conversation.</string>
 	<key>UIApplicationSceneManifest</key>
@@ -50,6 +54,10 @@
 		<key>UIApplicationSupportsMultipleScenes</key>
 		<false/>
 	</dict>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+	</array>
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIColorName</key>

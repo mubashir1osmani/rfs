@@ -169,6 +169,8 @@ final class RealtimeVoiceService: NSObject, ObservableObject {
                 "instructions": """
                 You are Nori, an autonomous personal assistant. Be concise, warm, and action-oriented.
                 Use tools whenever the user asks to create a task, schedule time, book a meeting, or send an email.
+                If the user says a calendar block is protected or non-negotiable, include a concise protectionReason.
+                Never place new work over a protected block unless the user explicitly chooses to move it.
                 External actions are prepared for approval in the app; never claim they already happened.
                 Current context: \(contextJSON)
                 """,
@@ -278,7 +280,8 @@ final class RealtimeVoiceService: NSObject, ObservableObject {
                 start: start,
                 durationMinutes: values["durationMinutes"] as? Int ?? 60,
                 notes: values["notes"] as? String ?? "Planned with Nori",
-                attendees: values["attendees"] as? [String] ?? []
+                attendees: values["attendees"] as? [String] ?? [],
+                protectionReason: values["protectionReason"] as? String
             )
         case "send_email":
             return .email(
@@ -313,8 +316,9 @@ final class RealtimeVoiceService: NSObject, ObservableObject {
                     "notes": ["type": "string"],
                     "attendees": ["type": "array", "items": ["type": "string"]],
                     "isMeeting": ["type": "boolean"],
+                    "protectionReason": ["type": ["string", "null"]],
                 ],
-                required: ["title", "start", "durationMinutes", "notes", "attendees", "isMeeting"]
+                required: ["title", "start", "durationMinutes", "notes", "attendees", "isMeeting", "protectionReason"]
             ),
             tool(
                 name: "send_email",

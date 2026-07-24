@@ -44,16 +44,47 @@ struct SettingsView: View {
                         }
                     }
                     .tint(Color.noriGreen)
+
+                    Toggle(isOn: Binding(
+                        get: { viewModel.proactiveAlertsEnabled },
+                        set: viewModel.setProactiveAlertsEnabled
+                    )) {
+                        Label {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Protected-time alerts").foregroundStyle(Color.noriText)
+                                Text("Daily nudge and immediate conflict notifications.")
+                                    .font(.caption)
+                                    .foregroundStyle(Color.noriMuted)
+                            }
+                        } icon: {
+                            Image(systemName: "shield.checkered").foregroundStyle(Color.noriPeach)
+                        }
+                    }
+                    .tint(Color.noriGreen)
                 }
 
                 Section("CONNECTIONS") {
-                    connectionRow(
-                        title: "System Calendar",
-                        subtitle: "Permission is requested when you approve an event",
-                        icon: "calendar",
-                        color: .noriBlue,
-                        status: "On device"
-                    )
+                    HStack(spacing: 12) {
+                        Image(systemName: "calendar")
+                            .foregroundStyle(Color.noriBlue)
+                            .frame(width: 37, height: 37)
+                            .background(Color.noriBlue.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Apple Calendar").font(.subheadline.weight(.semibold)).foregroundStyle(Color.noriText)
+                            Text("Read events and watch protected time").font(.caption2).foregroundStyle(Color.noriMuted)
+                        }
+                        Spacer()
+                        Button(viewModel.calendarAccessGranted ? "Connected" : "Connect") {
+                            if viewModel.calendarAccessGranted {
+                                Task { await viewModel.refreshSchedule() }
+                            } else {
+                                viewModel.connectSystemCalendar()
+                            }
+                        }
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(Color.noriMint)
+                    }
+                    .padding(.vertical, 3)
                     HStack(spacing: 12) {
                         Image(systemName: "g.circle.fill")
                             .foregroundStyle(Color.noriPeach)
@@ -147,36 +178,11 @@ struct SettingsView: View {
             do {
                 if google.isConnected { try google.disconnect() }
                 else { try await google.connect() }
+                await viewModel.refreshSchedule()
             } catch {
                 viewModel.activeError = error.localizedDescription
             }
         }
     }
 
-    private func connectionRow(
-        title: String,
-        subtitle: String,
-        icon: String,
-        color: Color,
-        status: String
-    ) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .foregroundStyle(color)
-                .frame(width: 37, height: 37)
-                .background(color.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(Color.noriText)
-                Text(subtitle).font(.caption2).foregroundStyle(Color.noriMuted)
-            }
-            Spacer()
-            Text(status)
-                .font(.caption.weight(.bold))
-                .foregroundStyle(Color.noriMint)
-                .padding(.horizontal, 11)
-                .frame(minHeight: 40)
-                .background(Color.noriGreen.opacity(0.14), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-        }
-        .padding(.vertical, 3)
-    }
 }

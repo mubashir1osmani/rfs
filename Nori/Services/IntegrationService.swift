@@ -196,6 +196,29 @@ final class IntegrationService {
     private let eventStore = EKEventStore()
     private let google = GoogleOAuthService.shared
 
+    var hasSystemCalendarAccess: Bool {
+        EKEventStore.authorizationStatus(for: .event) == .fullAccess
+    }
+
+    var hasCalendarConnection: Bool {
+        hasSystemCalendarAccess || google.isConnected
+    }
+
+    func requestSystemCalendarAccess() async throws -> Bool {
+        try await eventStore.requestFullAccessToEvents()
+    }
+
+    func calendarBlocks(from start: Date, to end: Date) async -> [CalendarBlock] {
+        var blocks: [CalendarBlock] = []
+        if hasSystemCalendarAccess {
+            blocks.append(contentsOf: systemCalendarBlocks(from: start, to: end))
+        }
+        if google.isConnected, let googleBlocks = try? await googleCalendarBlocks(from: start, to: end) {
+            blocks.append(contentsOf: googleBlocks)
+        }
+        return deduplicated(blocks)
+    }
+
     func execute(_ action: AssistantAction) async throws {
         switch action.kind {
         case .calendar, .meeting:
@@ -225,6 +248,61 @@ final class IntegrationService {
             token: token,
             body: body
         )
+    }
+
+    private func googleCalendarBlocks(from start: Date, to end: Date) async throws -> [CalendarBlock] {
+        struct EventList: Decodable {
+            struct Event: Decodable {
+                struct Boundary: Decodable {
+                    let dateTime: String?
+                    let date: String?
+                }
+                struct Attendee: Decodable { let email: String? }
+
+                let id: String
+                let summary: String?
+                let start: Boundary
+                let end: Boundary
+                let attendees: [Attendee]?
+                let status: String?
+                let transparency: String?
+            }
+
+            let items: [Event]?
+        }
+
+        let token = try await google.validAccessToken()
+        var components = URLComponents(string: "https://www.googleapis.com/calendar/v3/calendars/primary/events")!
+        components.queryItems = [
+            URLQueryItem(name: "timeMin", value: start.ISO8601Format()),
+            URLQueryItem(name: "timeMax", value: end.ISO8601Format()),
+            URLQueryItem(name: "singleEvents", value: "true"),
+            URLQueryItem(name: "orderBy", value: "startTime"),
+            URLQueryItem(name: "maxResults", value: "250"),
+        ]
+        var request = URLRequest(url: components.url!)
+        request.timeoutInterval = 30
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let response = response as? HTTPURLResponse, response.statusCode == 200 else {
+            throw IntegrationError.actionFailed("Google Calendar could not be refreshed.")
+        }
+        let payload = try JSONDecoder().decode(EventList.self, from: data)
+        return (payload.items ?? []).compactMap { event in
+            guard event.status != "cancelled", event.transparency != "transparent",
+                  let eventStart = Self.googleDate(dateTime: event.start.dateTime, date: event.start.date),
+                  let eventEnd = Self.googleDate(dateTime: event.end.dateTime, date: event.end.date),
+                  eventEnd > eventStart else { return nil }
+            return CalendarBlock(
+                id: "google-\(event.id)",
+                title: event.summary ?? "Busy",
+                start: eventStart,
+                durationMinutes: max(1, Int(eventEnd.timeIntervalSince(eventStart) / 60)),
+                colorName: "blue",
+                source: .google,
+                attendees: (event.attendees ?? []).compactMap(\.email)
+            )
+        }
     }
 
     private func sendWithGmail(_ action: AssistantAction) async throws {
@@ -277,6 +355,51 @@ final class IntegrationService {
         event.notes = action.notes ?? "Planned with Nori"
         event.url = URL(string: "nori://action/\(action.id)")
         try eventStore.save(event, span: .thisEvent, commit: true)
+    }
+
+    private func systemCalendarBlocks(from start: Date, to end: Date) -> [CalendarBlock] {
+        let predicate = eventStore.predicateForEvents(withStart: start, end: end, calendars: nil)
+        return eventStore.events(matching: predicate).compactMap { event in
+            guard event.status != .canceled, event.availability != .free, event.endDate > event.startDate else { return nil }
+            return CalendarBlock(
+                id: "eventkit-\(event.calendarItemIdentifier)",
+                title: event.title?.isEmpty == false ? event.title! : "Busy",
+                start: event.startDate,
+                durationMinutes: max(1, Int(event.endDate.timeIntervalSince(event.startDate) / 60)),
+                colorName: event.hasAttendees ? "violet" : "blue",
+                source: .system,
+                attendees: event.attendees?.map {
+                    let value = $0.url.absoluteString.removingPercentEncoding ?? $0.url.absoluteString
+                    return value.replacingOccurrences(of: "mailto:", with: "")
+                } ?? []
+            )
+        }
+    }
+
+    private func deduplicated(_ blocks: [CalendarBlock]) -> [CalendarBlock] {
+        var unique: [String: CalendarBlock] = [:]
+        for block in blocks {
+            let minute = Int(block.start.timeIntervalSince1970 / 60)
+            let key = "\(block.title.lowercased())|\(minute)|\(block.durationMinutes)"
+            if unique[key] == nil || block.source == .system {
+                unique[key] = block
+            }
+        }
+        return unique.values.sorted { $0.start < $1.start }
+    }
+
+    private static func googleDate(dateTime: String?, date: String?) -> Date? {
+        if let dateTime {
+            let fractional = ISO8601DateFormatter()
+            fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            return fractional.date(from: dateTime) ?? ISO8601DateFormatter().date(from: dateTime)
+        }
+        guard let date else { return nil }
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.date(from: date)
     }
 
     private func openMailDraft(_ action: AssistantAction) throws {

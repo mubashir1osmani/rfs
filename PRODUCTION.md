@@ -8,6 +8,7 @@
 - Confirm `Nori/Resources/PrivacyInfo.xcprivacy` against the final analytics, crash reporting, AI retention, and Google data-use policy.
 - Publish privacy and support URLs. Explain that microphone audio and selected planning context are sent directly to OpenAI.
 - Test Realtime interruptions, headphones, denied permissions, key removal, Google token expiry, offline behavior, Dynamic Type, and VoiceOver on physical devices.
+- Test EventKit change delivery, background refresh scheduling, conflict de-duplication, daily notifications, and App Intent discovery on physical devices.
 - Archive with Release, run Xcode validation, upload to TestFlight, and complete Apple privacy and encryption questionnaires.
 
 ## OpenAI key boundary
@@ -22,6 +23,10 @@ Do not preinstall one shared OpenAI key in a public binary. iOS applications can
 - Keep scopes limited to `calendar.events` and `gmail.send` unless a reviewed feature requires more.
 - Treat Calendar attendees and email content as sensitive user data; avoid analytics payloads containing either.
 - Provide account deletion and token-revocation instructions in the privacy policy.
+
+## Monitoring boundary
+
+The included app detects conflicts when calendars refresh in the foreground, after EventKit change notifications, and during opportunistic iOS background refresh. iOS does not guarantee continuous background execution. A public release promising immediate alerts while the app is closed needs Google Calendar push channels, trusted server processing, APNs, durable de-duplication, and revocation handling.
 
 ## Release boundary
 

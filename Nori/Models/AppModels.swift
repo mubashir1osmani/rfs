@@ -25,6 +25,8 @@ struct CalendarBlock: Identifiable, Codable, Hashable, Sendable {
     enum Source: String, Codable, Sendable {
         case seed
         case nori
+        case system
+        case google
     }
 
     let id: String
@@ -34,9 +36,40 @@ struct CalendarBlock: Identifiable, Codable, Hashable, Sendable {
     var colorName: String
     var source: Source
     var attendees: [String]
+    var protectionReason: String? = nil
 
     var end: Date {
         start.addingTimeInterval(TimeInterval(durationMinutes * 60))
+    }
+
+    var isProtected: Bool {
+        protectionReason != nil
+    }
+
+    func overlaps(_ other: CalendarBlock) -> Bool {
+        start < other.end && end > other.start
+    }
+}
+
+struct ScheduleConflict: Identifiable, Hashable, Sendable {
+    enum Kind: String, Hashable, Sendable {
+        case overlap
+        case tightTransition
+    }
+
+    let protectedBlock: CalendarBlock
+    let conflictingBlock: CalendarBlock
+    let kind: Kind
+
+    var id: String { "\(protectedBlock.id)|\(conflictingBlock.id)|\(kind.rawValue)" }
+
+    var summary: String {
+        switch kind {
+        case .overlap:
+            "\(conflictingBlock.title) at \(conflictingBlock.start.formatted(date: .abbreviated, time: .shortened)) overlaps \(protectedBlock.title)."
+        case .tightTransition:
+            "\(conflictingBlock.title) at \(conflictingBlock.start.formatted(date: .abbreviated, time: .shortened)) leaves less than 15 minutes around \(protectedBlock.title)."
+        }
     }
 }
 
@@ -57,6 +90,7 @@ struct AssistantAction: Identifiable, Codable, Hashable, Sendable {
     var durationMinutes: Int? = nil
     var notes: String? = nil
     var attendees: [String]? = nil
+    var protectionReason: String? = nil
     var to: String? = nil
     var subject: String? = nil
     var body: String? = nil
@@ -79,7 +113,8 @@ struct AssistantAction: Identifiable, Codable, Hashable, Sendable {
         start: Date,
         durationMinutes: Int,
         notes: String,
-        attendees: [String] = []
+        attendees: [String] = [],
+        protectionReason: String? = nil
     ) -> AssistantAction {
         AssistantAction(
             id: UUID().uuidString,
@@ -88,7 +123,8 @@ struct AssistantAction: Identifiable, Codable, Hashable, Sendable {
             start: start.ISO8601Format(),
             durationMinutes: durationMinutes,
             notes: notes,
-            attendees: attendees
+            attendees: attendees,
+            protectionReason: protectionReason
         )
     }
 
@@ -131,4 +167,5 @@ struct PersistedAppState: Codable, Sendable {
     let messages: [ChatMessage]
     let actionStates: [String: ActionState]
     let autonomyEnabled: Bool
+    let proactiveAlertsEnabled: Bool?
 }

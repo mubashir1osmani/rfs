@@ -32,6 +32,11 @@
 		100000000000000000000019 /* RealtimeVoiceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000020 /* RealtimeVoiceService.swift */; };
 		10000000000000000000001A /* AuthenticationServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 200000000000000000000021 /* AuthenticationServices.framework */; };
 		10000000000000000000001B /* CryptoKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 200000000000000000000022 /* CryptoKit.framework */; };
+		10000000000000000000001C /* ProactiveSchedulingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000023 /* ProactiveSchedulingService.swift */; };
+		10000000000000000000001D /* UserNotifications.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 200000000000000000000024 /* UserNotifications.framework */; };
+		10000000000000000000001E /* BackgroundTasks.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 200000000000000000000025 /* BackgroundTasks.framework */; };
+		10000000000000000000001F /* NoriAppIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000026 /* NoriAppIntents.swift */; };
+		100000000000000000000020 /* AppIntents.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 200000000000000000000027 /* AppIntents.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -61,6 +66,11 @@
 		200000000000000000000020 /* RealtimeVoiceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealtimeVoiceService.swift; sourceTree = "<group>"; };
 		200000000000000000000021 /* AuthenticationServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AuthenticationServices.framework; path = System/Library/Frameworks/AuthenticationServices.framework; sourceTree = SDKROOT; };
 		200000000000000000000022 /* CryptoKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CryptoKit.framework; path = System/Library/Frameworks/CryptoKit.framework; sourceTree = SDKROOT; };
+		200000000000000000000023 /* ProactiveSchedulingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProactiveSchedulingService.swift; sourceTree = "<group>"; };
+		200000000000000000000024 /* UserNotifications.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UserNotifications.framework; path = System/Library/Frameworks/UserNotifications.framework; sourceTree = SDKROOT; };
+		200000000000000000000025 /* BackgroundTasks.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = BackgroundTasks.framework; path = System/Library/Frameworks/BackgroundTasks.framework; sourceTree = SDKROOT; };
+		200000000000000000000026 /* NoriAppIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoriAppIntents.swift; sourceTree = "<group>"; };
+		200000000000000000000027 /* AppIntents.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppIntents.framework; path = System/Library/Frameworks/AppIntents.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -74,6 +84,9 @@
 				100000000000000000000018 /* WebRTC in Frameworks */,
 				10000000000000000000001A /* AuthenticationServices.framework in Frameworks */,
 				10000000000000000000001B /* CryptoKit.framework in Frameworks */,
+				10000000000000000000001D /* UserNotifications.framework in Frameworks */,
+				10000000000000000000001E /* BackgroundTasks.framework in Frameworks */,
+				100000000000000000000020 /* AppIntents.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -104,11 +117,11 @@
 			sourceTree = "<group>";
 		};
 		400000000000000000000003 /* Models */ = {isa = PBXGroup; children = (200000000000000000000002, 200000000000000000000003, ); path = Models; sourceTree = "<group>"; };
-		400000000000000000000004 /* Services */ = {isa = PBXGroup; children = (200000000000000000000005, 200000000000000000000016, 200000000000000000000018, 200000000000000000000006, 200000000000000000000020, 200000000000000000000008, ); path = Services; sourceTree = "<group>"; };
+		400000000000000000000004 /* Services */ = {isa = PBXGroup; children = (200000000000000000000005, 200000000000000000000016, 200000000000000000000018, 200000000000000000000006, 200000000000000000000020, 200000000000000000000008, 200000000000000000000023, 200000000000000000000026, ); path = Services; sourceTree = "<group>"; };
 		400000000000000000000005 /* Theme */ = {isa = PBXGroup; children = (200000000000000000000004, ); path = Theme; sourceTree = "<group>"; };
 		400000000000000000000006 /* ViewModels */ = {isa = PBXGroup; children = (200000000000000000000009, ); path = ViewModels; sourceTree = "<group>"; };
 		400000000000000000000007 /* Views */ = {isa = PBXGroup; children = (20000000000000000000000A, 20000000000000000000000B, 20000000000000000000000C, 20000000000000000000000D, 20000000000000000000000E, 20000000000000000000000F, ); path = Views; sourceTree = "<group>"; };
-		400000000000000000000008 /* Frameworks */ = {isa = PBXGroup; children = (200000000000000000000013, 200000000000000000000014, 200000000000000000000019, 200000000000000000000021, 200000000000000000000022, ); name = Frameworks; sourceTree = "<group>"; };
+		400000000000000000000008 /* Frameworks */ = {isa = PBXGroup; children = (200000000000000000000013, 200000000000000000000014, 200000000000000000000019, 200000000000000000000021, 200000000000000000000022, 200000000000000000000024, 200000000000000000000025, 200000000000000000000027, ); name = Frameworks; sourceTree = "<group>"; };
 		400000000000000000000009 /* Products */ = {isa = PBXGroup; children = (200000000000000000000015, ); name = Products; sourceTree = "<group>"; };
 		40000000000000000000000A /* Resources */ = {isa = PBXGroup; children = (200000000000000000000010, 200000000000000000000011, 200000000000000000000017, ); path = Resources; sourceTree = "<group>"; };
 /* End PBXGroup section */
@@ -183,6 +196,8 @@
 				100000000000000000000014,
 				100000000000000000000016,
 				100000000000000000000019,
+				10000000000000000000001C,
+				10000000000000000000001F,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

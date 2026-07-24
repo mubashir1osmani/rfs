@@ -1,6 +1,6 @@
 # Nori — native iOS personal assistant
 
-Nori is a SwiftUI assistant for students and working professionals. Typed or spoken requests become tasks, calendar blocks, meeting invitations, and email actions that remain visible for approval.
+Nori is a proactive SwiftUI scheduling companion for students and working professionals. It protects important calendar blocks, detects conflicts before they become a problem, sends daily nudges, and turns typed or spoken requests into reviewable actions.
 
 ## Architecture
 
@@ -8,6 +8,8 @@ Nori is a SwiftUI assistant for students and working professionals. Typed or spo
 - **Text AI:** Swift calls OpenAI `/v1/chat/completions` directly with `URLSession`.
 - **Voice AI:** Swift mints an OpenAI Realtime client secret and connects directly using native WebRTC.
 - **Actions:** Swift calls Google Calendar and Gmail APIs directly after native Google sign-in.
+- **Calendar monitoring:** EventKit and Google Calendar ingestion are merged and de-duplicated on device.
+- **Proactivity:** protected-block conflict detection, local notifications, background refresh, and Siri/App Intents.
 - **Infrastructure:** no FastAPI, Node, Python, Docker, LiteLLM, or custom WebSocket server.
 
 The only package dependency is `stasel/WebRTC`, which provides the native iOS WebRTC implementation required for low-latency Realtime audio.
@@ -26,6 +28,7 @@ The only package dependency is `stasel/WebRTC`, which provides the native iOS We
 3. Run on an iPhone Simulator or connected iPhone.
 4. Open **You → OpenAI Access**, enter your personal OpenAI project key, and save it.
 5. Open the Nori tab and tap the microphone.
+6. Open **My day**, tap the shield beside an event, and choose why that block is protected.
 
 The key is stored in the device Keychain and requests go directly from the app to OpenAI. Do not embed a shared key in source code, build settings, or a distributed App Store binary.
 
@@ -41,11 +44,18 @@ Nori uses OAuth Authorization Code with PKCE and stores refresh credentials in K
 
 ## Behavior
 
+- Users explicitly mark only the blocks Nori should protect; the rest of the calendar is not treated as sacred.
+- Overlaps and transitions shorter than 15 minutes appear as decision cards and trigger local alerts.
+- A recurring 7:30 AM nudge summarizes protected time for the day.
+- Apple and connected Google calendars refresh when the app becomes active, when EventKit changes, and during opportunistic iOS background refresh.
+- Siri phrases include “What’s protected in Nori?” and “Protect my next block with Nori.”
 - Local tasks can run automatically when autonomy is enabled.
 - Calendar events, invitations, and email sends require an explicit action-card tap.
 - With Google connected, approval writes directly to Google Calendar or Gmail.
 - Without Google, calendar approval uses EventKit and email approval opens a Mail draft.
 - Without an OpenAI key, typed requests use the built-in local planner; Realtime voice requires OpenAI.
+
+iOS background refresh is opportunistic, not guaranteed continuous execution. Truly immediate closed-app monitoring for a public product requires trusted server-side calendar webhooks and push notifications.
 
 ## Validate
 

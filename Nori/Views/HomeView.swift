@@ -18,7 +18,7 @@ struct HomeView: View {
     }
 
     private var protectedHours: Int {
-        viewModel.calendarBlocks.reduce(0) { $0 + $1.durationMinutes } / 60
+        (viewModel.protectedMinutesToday + 59) / 60
     }
 
     var body: some View {
@@ -173,7 +173,7 @@ struct HomeView: View {
         HStack(spacing: 9) {
             MetricCard(value: "\(openTaskCount)", label: "open priorities", color: .noriMint)
             MetricCard(value: "\(protectedHours)h", label: "time protected", color: .noriViolet)
-            MetricCard(value: "\(viewModel.completedCount)", label: "done today", color: .noriYellow)
+            MetricCard(value: "\(viewModel.conflicts.count)", label: "need decisions", color: viewModel.conflicts.isEmpty ? .noriYellow : .noriPeach)
         }
     }
 
@@ -231,7 +231,13 @@ struct HomeView: View {
 
     private var nudge: some View {
         Button {
-            viewModel.send("Rebalance my afternoon and move one low-priority task if needed")
+            if let conflict = viewModel.conflicts.first {
+                viewModel.resolve(conflict)
+            } else if viewModel.protectedBlocksToday.isEmpty {
+                viewModel.selectedTab = .day
+            } else {
+                viewModel.send("Review my protected time today and tell me what needs attention")
+            }
         } label: {
             HStack(spacing: 12) {
                 Image(systemName: "sun.max.fill").foregroundStyle(Color.noriYellow)
@@ -240,7 +246,7 @@ struct HomeView: View {
                         .font(.caption2.weight(.heavy))
                         .tracking(1.1)
                         .foregroundStyle(Color.noriYellow)
-                    Text("You have a full afternoon. Want me to move one low-priority task?")
+                    Text(nudgeText)
                         .font(.caption)
                         .foregroundStyle(Color.noriText.opacity(0.78))
                         .multilineTextAlignment(.leading)
@@ -252,6 +258,16 @@ struct HomeView: View {
             .background(Color.noriYellow.opacity(0.08), in: RoundedRectangle(cornerRadius: 17, style: .continuous))
             .overlay { RoundedRectangle(cornerRadius: 17, style: .continuous).stroke(Color.noriYellow.opacity(0.24)) }
         }
+    }
+
+    private var nudgeText: String {
+        if let conflict = viewModel.conflicts.first {
+            return conflict.summary
+        }
+        if viewModel.protectedBlocksToday.isEmpty {
+            return "Nothing is protected today. Mark the time that should not get hijacked."
+        }
+        return "Your \(viewModel.protectedBlocksToday.count) protected block\(viewModel.protectedBlocksToday.count == 1 ? " is" : "s are") clear right now."
     }
 
     private func promptButton(_ title: String, icon: String, action: @escaping () -> Void) -> some View {
