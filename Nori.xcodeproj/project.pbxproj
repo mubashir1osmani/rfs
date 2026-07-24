@@ -13,7 +13,6 @@
 		100000000000000000000004 /* NoriTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000004 /* NoriTheme.swift */; };
 		100000000000000000000005 /* AppConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000005 /* AppConfiguration.swift */; };
 		100000000000000000000006 /* AssistantService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000006 /* AssistantService.swift */; };
-		100000000000000000000007 /* SpeechRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000007 /* SpeechRecognizer.swift */; };
 		100000000000000000000008 /* IntegrationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000008 /* IntegrationService.swift */; };
 		100000000000000000000009 /* AppViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000009 /* AppViewModel.swift */; };
 		10000000000000000000000A /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20000000000000000000000A /* Components.swift */; };
@@ -23,13 +22,16 @@
 		10000000000000000000000E /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20000000000000000000000E /* SettingsView.swift */; };
 		10000000000000000000000F /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20000000000000000000000F /* RootView.swift */; };
 		100000000000000000000010 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000010 /* Assets.xcassets */; };
-		100000000000000000000011 /* Speech.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 200000000000000000000012 /* Speech.framework */; };
 		100000000000000000000012 /* EventKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 200000000000000000000013 /* EventKit.framework */; };
 		100000000000000000000013 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 200000000000000000000014 /* AVFoundation.framework */; };
 		100000000000000000000014 /* AppStateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000016 /* AppStateStore.swift */; };
 		100000000000000000000015 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000017 /* PrivacyInfo.xcprivacy */; };
 		100000000000000000000016 /* CredentialStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000018 /* CredentialStore.swift */; };
 		100000000000000000000017 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 200000000000000000000019 /* Security.framework */; };
+		100000000000000000000018 /* WebRTC in Frameworks */ = {isa = PBXBuildFile; productRef = C00000000000000000000001 /* WebRTC */; };
+		100000000000000000000019 /* RealtimeVoiceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000020 /* RealtimeVoiceService.swift */; };
+		10000000000000000000001A /* AuthenticationServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 200000000000000000000021 /* AuthenticationServices.framework */; };
+		10000000000000000000001B /* CryptoKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 200000000000000000000022 /* CryptoKit.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -39,7 +41,6 @@
 		200000000000000000000004 /* NoriTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoriTheme.swift; sourceTree = "<group>"; };
 		200000000000000000000005 /* AppConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfiguration.swift; sourceTree = "<group>"; };
 		200000000000000000000006 /* AssistantService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantService.swift; sourceTree = "<group>"; };
-		200000000000000000000007 /* SpeechRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecognizer.swift; sourceTree = "<group>"; };
 		200000000000000000000008 /* IntegrationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntegrationService.swift; sourceTree = "<group>"; };
 		200000000000000000000009 /* AppViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppViewModel.swift; sourceTree = "<group>"; };
 		20000000000000000000000A /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
@@ -50,7 +51,6 @@
 		20000000000000000000000F /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		200000000000000000000010 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		200000000000000000000011 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		200000000000000000000012 /* Speech.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Speech.framework; path = System/Library/Frameworks/Speech.framework; sourceTree = SDKROOT; };
 		200000000000000000000013 /* EventKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = EventKit.framework; path = System/Library/Frameworks/EventKit.framework; sourceTree = SDKROOT; };
 		200000000000000000000014 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
 		200000000000000000000015 /* Nori.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Nori.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -58,6 +58,9 @@
 		200000000000000000000017 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		200000000000000000000018 /* CredentialStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CredentialStore.swift; sourceTree = "<group>"; };
 		200000000000000000000019 /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
+		200000000000000000000020 /* RealtimeVoiceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealtimeVoiceService.swift; sourceTree = "<group>"; };
+		200000000000000000000021 /* AuthenticationServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AuthenticationServices.framework; path = System/Library/Frameworks/AuthenticationServices.framework; sourceTree = SDKROOT; };
+		200000000000000000000022 /* CryptoKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CryptoKit.framework; path = System/Library/Frameworks/CryptoKit.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -65,10 +68,12 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				100000000000000000000011 /* Speech.framework in Frameworks */,
 				100000000000000000000012 /* EventKit.framework in Frameworks */,
 				100000000000000000000013 /* AVFoundation.framework in Frameworks */,
 				100000000000000000000017 /* Security.framework in Frameworks */,
+				100000000000000000000018 /* WebRTC in Frameworks */,
+				10000000000000000000001A /* AuthenticationServices.framework in Frameworks */,
+				10000000000000000000001B /* CryptoKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -99,11 +104,11 @@
 			sourceTree = "<group>";
 		};
 		400000000000000000000003 /* Models */ = {isa = PBXGroup; children = (200000000000000000000002, 200000000000000000000003, ); path = Models; sourceTree = "<group>"; };
-		400000000000000000000004 /* Services */ = {isa = PBXGroup; children = (200000000000000000000005, 200000000000000000000016, 200000000000000000000018, 200000000000000000000006, 200000000000000000000007, 200000000000000000000008, ); path = Services; sourceTree = "<group>"; };
+		400000000000000000000004 /* Services */ = {isa = PBXGroup; children = (200000000000000000000005, 200000000000000000000016, 200000000000000000000018, 200000000000000000000006, 200000000000000000000020, 200000000000000000000008, ); path = Services; sourceTree = "<group>"; };
 		400000000000000000000005 /* Theme */ = {isa = PBXGroup; children = (200000000000000000000004, ); path = Theme; sourceTree = "<group>"; };
 		400000000000000000000006 /* ViewModels */ = {isa = PBXGroup; children = (200000000000000000000009, ); path = ViewModels; sourceTree = "<group>"; };
 		400000000000000000000007 /* Views */ = {isa = PBXGroup; children = (20000000000000000000000A, 20000000000000000000000B, 20000000000000000000000C, 20000000000000000000000D, 20000000000000000000000E, 20000000000000000000000F, ); path = Views; sourceTree = "<group>"; };
-		400000000000000000000008 /* Frameworks */ = {isa = PBXGroup; children = (200000000000000000000012, 200000000000000000000013, 200000000000000000000014, 200000000000000000000019, ); name = Frameworks; sourceTree = "<group>"; };
+		400000000000000000000008 /* Frameworks */ = {isa = PBXGroup; children = (200000000000000000000013, 200000000000000000000014, 200000000000000000000019, 200000000000000000000021, 200000000000000000000022, ); name = Frameworks; sourceTree = "<group>"; };
 		400000000000000000000009 /* Products */ = {isa = PBXGroup; children = (200000000000000000000015, ); name = Products; sourceTree = "<group>"; };
 		40000000000000000000000A /* Resources */ = {isa = PBXGroup; children = (200000000000000000000010, 200000000000000000000011, 200000000000000000000017, ); path = Resources; sourceTree = "<group>"; };
 /* End PBXGroup section */
@@ -122,6 +127,9 @@
 			name = Nori;
 			productName = Nori;
 			productReference = 200000000000000000000015 /* Nori.app */;
+			packageProductDependencies = (
+				C00000000000000000000001 /* WebRTC */,
+			);
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -144,6 +152,9 @@
 			knownRegions = (en, Base, );
 			mainGroup = 400000000000000000000001;
 			productRefGroup = 400000000000000000000009 /* Products */;
+			packageReferences = (
+				B00000000000000000000001 /* XCRemoteSwiftPackageReference "WebRTC" */,
+			);
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (500000000000000000000001 /* Nori */, );
@@ -166,21 +177,41 @@
 			files = (
 				100000000000000000000001, 100000000000000000000002, 100000000000000000000003,
 				100000000000000000000004, 100000000000000000000005, 100000000000000000000006,
-				100000000000000000000007, 100000000000000000000008, 100000000000000000000009,
+				100000000000000000000008, 100000000000000000000009,
 				10000000000000000000000A, 10000000000000000000000B, 10000000000000000000000C,
 				10000000000000000000000D, 10000000000000000000000E, 10000000000000000000000F,
 				100000000000000000000014,
 				100000000000000000000016,
+				100000000000000000000019,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		B00000000000000000000001 /* XCRemoteSwiftPackageReference "WebRTC" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/stasel/WebRTC.git";
+			requirement = {
+				kind = exactVersion;
+				version = 150.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		C00000000000000000000001 /* WebRTC */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B00000000000000000000001 /* XCRemoteSwiftPackageReference "WebRTC" */;
+			productName = WebRTC;
+		};
+/* End XCSwiftPackageProductDependency section */
+
 /* Begin XCBuildConfiguration section */
 		A00000000000000000000001 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = {ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; CLANG_ENABLE_OBJC_ARC = YES; DEBUG_INFORMATION_FORMAT = dwarf; ENABLE_TESTABILITY = YES; ENABLE_USER_SCRIPT_SANDBOXING = YES; GCC_C_LANGUAGE_STANDARD = gnu17; GCC_PREPROCESSOR_DEFINITIONS = ("DEBUG=1", "$(inherited)", ); IPHONEOS_DEPLOYMENT_TARGET = 17.0; ONLY_ACTIVE_ARCH = YES; SDKROOT = iphoneos; SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)"; SWIFT_OPTIMIZATION_LEVEL = "-Onone"; }; name = Debug; };
 		A00000000000000000000002 /* Release */ = {isa = XCBuildConfiguration; buildSettings = {ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; CLANG_ENABLE_OBJC_ARC = YES; DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym"; DEAD_CODE_STRIPPING = YES; ENABLE_NS_ASSERTIONS = NO; ENABLE_USER_SCRIPT_SANDBOXING = YES; GCC_C_LANGUAGE_STANDARD = gnu17; IPHONEOS_DEPLOYMENT_TARGET = 17.0; SDKROOT = iphoneos; SWIFT_COMPILATION_MODE = wholemodule; VALIDATE_PRODUCT = YES; }; name = Release; };
-		A00000000000000000000003 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; ENABLE_PREVIEWS = YES; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = Nori/Resources/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 17.0; MARKETING_VERSION = 1.0; NORI_ASSISTANT_URL = ""; NORI_EXECUTE_URL = ""; PRODUCT_BUNDLE_IDENTIFIER = com.nori.assistant; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_STRICT_CONCURRENCY = complete; SWIFT_VERSION = 6.0; TARGETED_DEVICE_FAMILY = "1,2"; }; name = Debug; };
-		A00000000000000000000004 /* Release */ = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; ENABLE_PREVIEWS = YES; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = Nori/Resources/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 17.0; MARKETING_VERSION = 1.0; NORI_ASSISTANT_URL = ""; NORI_EXECUTE_URL = ""; PRODUCT_BUNDLE_IDENTIFIER = com.nori.assistant; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_STRICT_CONCURRENCY = complete; SWIFT_VERSION = 6.0; TARGETED_DEVICE_FAMILY = "1,2"; }; name = Release; };
+		A00000000000000000000003 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; ENABLE_PREVIEWS = YES; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = Nori/Resources/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 17.0; MARKETING_VERSION = 1.0; NORI_GOOGLE_CLIENT_ID = ""; NORI_GOOGLE_REDIRECT_SCHEME = ""; PRODUCT_BUNDLE_IDENTIFIER = com.nori.assistant; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_STRICT_CONCURRENCY = complete; SWIFT_VERSION = 6.0; TARGETED_DEVICE_FAMILY = "1,2"; }; name = Debug; };
+		A00000000000000000000004 /* Release */ = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; ENABLE_PREVIEWS = YES; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = Nori/Resources/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 17.0; MARKETING_VERSION = 1.0; NORI_GOOGLE_CLIENT_ID = ""; NORI_GOOGLE_REDIRECT_SCHEME = ""; PRODUCT_BUNDLE_IDENTIFIER = com.nori.assistant; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_STRICT_CONCURRENCY = complete; SWIFT_VERSION = 6.0; TARGETED_DEVICE_FAMILY = "1,2"; }; name = Release; };
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */

@@ -13,9 +13,13 @@ enum AssistantServiceError: LocalizedError {
 }
 
 actor AssistantService {
-    private struct Request: Encodable {
-        let message: String
-        let context: AssistantContext
+    private struct ChatResponse: Decodable {
+        struct Choice: Decodable {
+            struct Message: Decodable { let content: String }
+            let message: Message
+        }
+
+        let choices: [Choice]
     }
 
     private let configuration: AppConfiguration
@@ -25,23 +29,38 @@ actor AssistantService {
     }
 
     func ask(message: String, context: AssistantContext) async throws -> AssistantReply {
-        guard configuration.assistantURL != nil else {
+        guard configuration.usesRemoteAssistant else {
             return localReply(message: message, context: context)
         }
         return try await remoteReply(message: message, context: context)
     }
 
     private func remoteReply(message: String, context: AssistantContext) async throws -> AssistantReply {
-        guard let url = configuration.assistantURL else { throw AssistantServiceError.invalidResponse }
-        var request = URLRequest(url: url)
+        guard let apiKey = configuration.openAIKey else { throw AssistantServiceError.invalidResponse }
+        var request = URLRequest(url: configuration.chatCompletionsURL)
         request.httpMethod = "POST"
         request.timeoutInterval = 35
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue(configuration.userID, forHTTPHeaderField: "X-User-Id")
-        if let appToken = configuration.appToken {
-            request.setValue("Bearer \(appToken)", forHTTPHeaderField: "Authorization")
-        }
-        request.httpBody = try JSONEncoder.nori.encode(Request(message: message, context: context))
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        let contextData = try JSONEncoder.nori.encode(context)
+        let contextJSON = String(data: contextData, encoding: .utf8) ?? "{}"
+        request.httpBody = try JSONSerialization.data(withJSONObject: [
+            "model": "gpt-5.6-sol",
+            "messages": [
+                ["role": "system", "content": Self.instructions],
+                ["role": "user", "content": "Request: \(message)\nContext: \(contextJSON)"],
+            ],
+            "reasoning_effort": "low",
+            "safety_identifier": configuration.userID,
+            "response_format": [
+                "type": "json_schema",
+                "json_schema": [
+                    "name": "nori_action_plan",
+                    "strict": true,
+                    "schema": Self.replySchema,
+                ],
+            ],
+        ])
 
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse else { throw AssistantServiceError.invalidResponse }
@@ -49,16 +68,64 @@ actor AssistantService {
             throw AssistantServiceError.requestFailed(errorMessage(from: data, statusCode: httpResponse.statusCode))
         }
         do {
-            return try JSONDecoder.nori.decode(AssistantReply.self, from: data)
+            let response = try JSONDecoder().decode(ChatResponse.self, from: data)
+            guard let content = response.choices.first?.message.content.data(using: .utf8) else {
+                throw AssistantServiceError.invalidResponse
+            }
+            return try JSONDecoder().decode(AssistantReply.self, from: content)
         } catch {
             throw AssistantServiceError.invalidResponse
         }
     }
 
+    private static let instructions = """
+    You are Nori, an action-oriented personal assistant for students and working professionals.
+    Return a short helpful message and zero or more typed actions. Use ISO 8601 timestamps with timezone offsets.
+    Tasks are safe local actions. Calendar changes, meeting invitations, and emails must remain visible for approval.
+    Never claim an external action happened. Draft concise professional emails and avoid overlapping calendar events.
+    """
+
+    private static var replySchema: [String: Any] {
+        [
+            "type": "object",
+            "additionalProperties": false,
+            "properties": [
+                "message": ["type": "string"],
+                "actions": [
+                    "type": "array",
+                    "maxItems": 5,
+                    "items": [
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": [
+                            "id": ["type": "string"],
+                            "kind": ["type": "string", "enum": ["task", "calendar", "meeting", "email"]],
+                            "title": ["type": ["string", "null"]],
+                            "dueLabel": ["type": ["string", "null"]],
+                            "category": ["type": ["string", "null"], "enum": ["Work", "School", "Personal", NSNull()]],
+                            "start": ["type": ["string", "null"]],
+                            "durationMinutes": ["type": ["integer", "null"]],
+                            "notes": ["type": ["string", "null"]],
+                            "attendees": ["type": ["array", "null"], "items": ["type": "string"]],
+                            "to": ["type": ["string", "null"]],
+                            "subject": ["type": ["string", "null"]],
+                            "body": ["type": ["string", "null"]],
+                        ],
+                        "required": ["id", "kind", "title", "dueLabel", "category", "start", "durationMinutes", "notes", "attendees", "to", "subject", "body"],
+                    ],
+                ],
+            ],
+            "required": ["message", "actions"],
+        ]
+    }
+
     private func errorMessage(from data: Data, statusCode: Int) -> String {
-        struct ErrorEnvelope: Decodable { let error: String }
+        struct ErrorEnvelope: Decodable {
+            struct APIError: Decodable { let message: String }
+            let error: APIError
+        }
         if let envelope = try? JSONDecoder().decode(ErrorEnvelope.self, from: data) {
-            return envelope.error
+            return envelope.error.message
         }
         return "Nori’s service is unavailable (\(statusCode)). Please try again."
     }
@@ -201,7 +268,7 @@ actor AssistantService {
     }
 }
 
-private extension JSONEncoder {
+extension JSONEncoder {
     static var nori: JSONEncoder {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
@@ -209,7 +276,7 @@ private extension JSONEncoder {
     }
 }
 
-private extension JSONDecoder {
+extension JSONDecoder {
     static var nori: JSONDecoder {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601

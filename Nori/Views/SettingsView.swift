@@ -2,9 +2,10 @@ import SwiftUI
 
 struct SettingsView: View {
     @ObservedObject var viewModel: AppViewModel
+    @ObservedObject private var google = GoogleOAuthService.shared
     private let configuration = AppConfiguration.current
-    @State private var backendToken = ""
-    @State private var hasBackendToken = CredentialStore.appToken() != nil
+    @State private var openAIKey = ""
+    @State private var hasOpenAIKey = CredentialStore.openAIKey != nil
 
     var body: some View {
         NavigationStack {
@@ -53,13 +54,23 @@ struct SettingsView: View {
                         color: .noriBlue,
                         status: "On device"
                     )
-                    connectionRow(
-                        title: "Gmail",
-                        subtitle: configuration.usesRemoteExecution ? "Direct send through your backend" : "Opens a reviewable Mail draft",
-                        icon: "envelope",
-                        color: .noriPeach,
-                        status: configuration.usesRemoteExecution ? "Backend" : "Mail app"
-                    )
+                    HStack(spacing: 12) {
+                        Image(systemName: "g.circle.fill")
+                            .foregroundStyle(Color.noriPeach)
+                            .frame(width: 37, height: 37)
+                            .background(Color.noriPeach.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Google Workspace").font(.subheadline.weight(.semibold)).foregroundStyle(Color.noriText)
+                            Text("Calendar events and Gmail sending").font(.caption2).foregroundStyle(Color.noriMuted)
+                        }
+                        Spacer()
+                        Button(google.isConnected ? "Disconnect" : (google.isConnecting ? "Connecting" : "Connect")) {
+                            toggleGoogleConnection()
+                        }
+                        .disabled(google.isConnecting)
+                        .font(.caption.weight(.bold))
+                    }
+                    .padding(.vertical, 3)
                 }
 
                 Section("AI ENGINE") {
@@ -67,34 +78,32 @@ struct SettingsView: View {
                         Label("Nori Intelligence", systemImage: "brain.head.profile")
                             .font(.headline)
                             .foregroundStyle(Color.noriText)
-                        Text(configuration.usesRemoteAssistant ? "AI backend configured" : "Smart local planner")
+                        Text(configuration.usesRemoteAssistant ? "OpenAI · GPT Realtime 2.1" : "Smart local planner")
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(Color.noriGreen)
-                        Text("Nori keeps private provider keys on the server and sends only the context needed to plan your request.")
+                        Text("Your OpenAI key stays in this device’s Keychain. Nori sends requests directly to OpenAI.")
                             .font(.caption)
                             .foregroundStyle(Color.noriMuted)
                     }
                     .padding(.vertical, 5)
                 }
 
-                if configuration.usesRemoteAssistant || configuration.usesRemoteExecution {
-                    Section("BACKEND ACCESS") {
-                        SecureField("Access token", text: $backendToken)
-                            .textContentType(.password)
-                            .privacySensitive()
-                        Button(hasBackendToken ? "Replace secure token" : "Save secure token") {
-                            saveBackendToken()
-                        }
-                        .disabled(backendToken.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                        if hasBackendToken {
-                            Button("Remove token", role: .destructive) {
-                                removeBackendToken()
-                            }
-                        }
-                        Text("The token stays in this device’s Keychain and is never bundled with the app.")
-                            .font(.caption)
-                            .foregroundStyle(Color.noriMuted)
+                Section("OPENAI ACCESS") {
+                    SecureField("OpenAI API key", text: $openAIKey)
+                        .textContentType(.password)
+                        .privacySensitive()
+                    Button(hasOpenAIKey ? "Replace secure key" : "Save secure key") {
+                        saveOpenAIKey()
                     }
+                    .disabled(openAIKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    if hasOpenAIKey {
+                        Button("Remove key", role: .destructive) {
+                            removeOpenAIKey()
+                        }
+                    }
+                    Text("Use a personal project key. Never embed a shared OpenAI key in a distributed app.")
+                        .font(.caption)
+                        .foregroundStyle(Color.noriMuted)
                 }
 
                 Section("APPROVAL BOUNDARY") {
@@ -113,23 +122,34 @@ struct SettingsView: View {
         }
     }
 
-    private func saveBackendToken() {
+    private func saveOpenAIKey() {
         do {
-            try CredentialStore.setAppToken(backendToken)
-            backendToken = ""
-            hasBackendToken = true
+            try CredentialStore.setOpenAIKey(openAIKey)
+            openAIKey = ""
+            hasOpenAIKey = true
         } catch {
             viewModel.activeError = error.localizedDescription
         }
     }
 
-    private func removeBackendToken() {
+    private func removeOpenAIKey() {
         do {
-            try CredentialStore.setAppToken("")
-            backendToken = ""
-            hasBackendToken = false
+            try CredentialStore.setOpenAIKey("")
+            openAIKey = ""
+            hasOpenAIKey = false
         } catch {
             viewModel.activeError = error.localizedDescription
+        }
+    }
+
+    private func toggleGoogleConnection() {
+        Task {
+            do {
+                if google.isConnected { try google.disconnect() }
+                else { try await google.connect() }
+            } catch {
+                viewModel.activeError = error.localizedDescription
+            }
         }
     }
 

@@ -2,13 +2,13 @@ import SwiftUI
 
 struct AssistantView: View {
     @ObservedObject var viewModel: AppViewModel
-    @ObservedObject private var speechRecognizer: SpeechRecognizer
+    @ObservedObject private var realtimeVoice: RealtimeVoiceService
     @FocusState private var composerFocused: Bool
     private let configuration = AppConfiguration.current
 
     init(viewModel: AppViewModel) {
         self.viewModel = viewModel
-        speechRecognizer = viewModel.speechRecognizer
+        realtimeVoice = viewModel.realtimeVoiceService
     }
 
     var body: some View {
@@ -35,6 +35,9 @@ struct AssistantView: View {
                             }
                             .accessibilityElement(children: .combine)
                             .accessibilityLabel("Nori is making a plan")
+                        }
+                        if realtimeVoice.isActive {
+                            voiceActivity
                         }
                     }
                     .frame(maxWidth: 620)
@@ -71,7 +74,7 @@ struct AssistantView: View {
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Label(configuration.usesRemoteAssistant ? "AI backend" : "Local", systemImage: "circle.fill")
+                    Label(configuration.usesRemoteAssistant ? "OpenAI" : "Local", systemImage: "circle.fill")
                         .font(.caption2.weight(.bold))
                         .foregroundStyle(Color.noriMint)
                         .padding(.horizontal, 10)
@@ -79,18 +82,50 @@ struct AssistantView: View {
                         .background(Color.noriGreen.opacity(0.13), in: Capsule())
                 }
             }
-            .onChange(of: speechRecognizer.transcript) { _, transcript in
-                viewModel.composerText = transcript
-            }
-            .alert("Voice input", isPresented: Binding(
-                get: { speechRecognizer.errorMessage != nil },
-                set: { if !$0 { speechRecognizer.errorMessage = nil } }
+            .alert("Realtime voice", isPresented: Binding(
+                get: { realtimeVoice.errorMessage != nil },
+                set: { if !$0 { realtimeVoice.errorMessage = nil } }
             )) {
-                Button("OK", role: .cancel) { speechRecognizer.errorMessage = nil }
+                Button("OK", role: .cancel) { realtimeVoice.errorMessage = nil }
             } message: {
-                Text(speechRecognizer.errorMessage ?? "")
+                Text(realtimeVoice.errorMessage ?? "")
             }
         }
+    }
+
+    private var voiceActivity: some View {
+        HStack(spacing: 12) {
+            Image(systemName: realtimeVoice.status == .speaking ? "speaker.wave.2.fill" : "waveform")
+                .font(.headline)
+                .symbolEffect(.variableColor.iterative, isActive: realtimeVoice.isActive)
+                .foregroundStyle(realtimeVoice.status == .speaking ? Color.noriPeach : Color.noriMint)
+                .frame(width: 38, height: 38)
+                .background(Color.noriBackground, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(realtimeVoice.status.label.uppercased())
+                    .font(.caption2.weight(.heavy))
+                    .tracking(1)
+                    .foregroundStyle(Color.noriMint)
+                Text(realtimeVoice.liveTranscript.isEmpty ? "Talk naturally—Nori is ready." : realtimeVoice.liveTranscript)
+                    .font(.caption)
+                    .foregroundStyle(Color.noriText)
+                    .lineLimit(3)
+            }
+            Spacer(minLength: 8)
+            Button("Stop") { realtimeVoice.stop() }
+                .font(.caption.weight(.bold))
+                .foregroundStyle(Color.noriPeach)
+                .frame(minHeight: 44)
+        }
+        .padding(12)
+        .background(Color.noriRaised, in: RoundedRectangle(cornerRadius: 17, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 17, style: .continuous)
+                .stroke(Color.noriMint.opacity(0.35))
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Nori voice status: \(realtimeVoice.status.label)")
     }
 
     private var composer: some View {
@@ -107,15 +142,15 @@ struct AssistantView: View {
 
             HStack(alignment: .bottom, spacing: 8) {
                 Button {
-                    speechRecognizer.toggle()
+                    viewModel.toggleRealtimeVoice()
                 } label: {
-                    Image(systemName: speechRecognizer.isListening ? "waveform.circle.fill" : "mic.circle.fill")
+                    Image(systemName: realtimeVoice.isActive ? "waveform.circle.fill" : "mic.circle.fill")
                         .font(.title2)
-                        .symbolEffect(.pulse, isActive: speechRecognizer.isListening)
-                        .foregroundStyle(speechRecognizer.isListening ? Color.noriPeach : Color.noriMint)
+                        .symbolEffect(.pulse, isActive: realtimeVoice.isActive)
+                        .foregroundStyle(realtimeVoice.isActive ? Color.noriPeach : Color.noriMint)
                         .frame(width: 44, height: 44)
                 }
-                .accessibilityLabel(speechRecognizer.isListening ? "Stop listening" : "Talk to Nori")
+                .accessibilityLabel(realtimeVoice.isActive ? "Stop realtime voice" : "Talk to Nori")
 
                 TextField("Tell Nori what you need…", text: $viewModel.composerText, axis: .vertical)
                     .lineLimit(1...4)
@@ -160,7 +195,7 @@ struct AssistantView: View {
     }
 
     private func send() {
-        speechRecognizer.stop()
+        realtimeVoice.stop()
         viewModel.send()
     }
 }

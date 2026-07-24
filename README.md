@@ -1,68 +1,58 @@
 # Nori — native iOS personal assistant
 
-Nori is a native SwiftUI app for students and working professionals. It turns spoken or typed requests into tasks, focus blocks, meeting invites, and reviewable email actions.
+Nori is a SwiftUI assistant for students and working professionals. Typed or spoken requests become tasks, calendar blocks, meeting invitations, and email actions that remain visible for approval.
+
+## Architecture
+
+- **App:** SwiftUI, native audio, WebRTC, Keychain, EventKit, and Google OAuth PKCE.
+- **Text AI:** Swift calls OpenAI `/v1/chat/completions` directly with `URLSession`.
+- **Voice AI:** Swift mints an OpenAI Realtime client secret and connects directly using native WebRTC.
+- **Actions:** Swift calls Google Calendar and Gmail APIs directly after native Google sign-in.
+- **Infrastructure:** no FastAPI, Node, Python, Docker, LiteLLM, or custom WebSocket server.
+
+The only package dependency is `stasel/WebRTC`, which provides the native iOS WebRTC implementation required for low-latency Realtime audio.
 
 ## Requirements
 
 - macOS with Xcode 16 or newer
 - iOS 17 or newer
-- An Apple development team for device builds
-- Node.js 20 or newer only when running the optional backend
+- OpenAI project API key with access to the configured text and Realtime models
+- Apple development team for physical-device builds
 
-## Run the iOS app
+## Run Nori
 
-1. Open `Nori.xcodeproj` in Xcode.
-2. Select the **Nori** target and choose your development team under **Signing & Capabilities**.
-3. Choose an iPhone simulator or connected iPhone.
-4. Press **Run**.
+1. Open `Nori.xcodeproj` in Xcode and allow Swift Package Manager to resolve `stasel/WebRTC`.
+2. Select the **Nori** target and choose your team under **Signing & Capabilities**.
+3. Run on an iPhone Simulator or connected iPhone.
+4. Open **You → OpenAI Access**, enter your personal OpenAI project key, and save it.
+5. Open the Nori tab and tap the microphone.
 
-The app works immediately with its local natural-language planner. Microphone, speech recognition, and calendar permissions are requested only when those features are used.
+The key is stored in the device Keychain and requests go directly from the app to OpenAI. Do not embed a shared key in source code, build settings, or a distributed App Store binary.
 
-## Native capabilities
+## Connect Google
 
-- SwiftUI interface with Dynamic Type, VoiceOver labels, native tab navigation, sheets, alerts, and keyboard behavior.
-- Live voice requests through `Speech` and `AVFoundation`.
-- Native calendar writes through `EventKit`. Events sync to Google Calendar when the user's Google account is enabled in iOS Calendar settings.
-- Secure remote AI planning through `URLSession`, with a useful local fallback.
-- Direct Google Calendar and Gmail execution through the optional backend.
-- Explicit approval cards before meetings, emails, or external calendar changes.
-- One-tap in-app demo covering every action type.
+1. In Google Cloud Console, enable **Google Calendar API** and **Gmail API**.
+2. Configure the OAuth consent screen and create an **iOS OAuth client** for Nori’s bundle identifier.
+3. Set target build setting `NORI_GOOGLE_CLIENT_ID` to the generated client ID.
+4. Set `NORI_GOOGLE_REDIRECT_SCHEME` to Google’s reversed client ID, such as `com.googleusercontent.apps.123456789-abc`.
+5. Run Nori and choose **You → Google Workspace → Connect**.
 
-## Connect the backend
+Nori uses OAuth Authorization Code with PKCE and stores refresh credentials in Keychain. It requests only `calendar.events` and `gmail.send` scopes. Gmail scope verification is normally required before public distribution.
 
-The dependency-free Node server uses the OpenAI Responses API, Google Calendar API, and Gmail API.
+## Behavior
 
-```bash
-cp .env.example .env
-# Add your server credentials to .env
-npm run server:env
-```
-
-In Xcode, edit the **Nori** scheme and add these environment variables to **Run → Arguments**:
-
-```text
-NORI_ASSISTANT_URL=http://127.0.0.1:8787/assistant
-NORI_EXECUTE_URL=http://127.0.0.1:8787/execute
-NORI_APP_TOKEN=
-NORI_USER_ID=local-ios-user
-```
-
-For Release/TestFlight builds, set the user-defined build settings `NORI_ASSISTANT_URL` and `NORI_EXECUTE_URL` to deployed HTTPS endpoints. Enter `NORI_APP_TOKEN` in Nori’s **Settings → Backend Access** screen; it is stored in the device Keychain instead of the app bundle. Use a LAN URL only for local development. Keep OpenAI and Google credentials on the server.
+- Local tasks can run automatically when autonomy is enabled.
+- Calendar events, invitations, and email sends require an explicit action-card tap.
+- With Google connected, approval writes directly to Google Calendar or Gmail.
+- Without Google, calendar approval uses EventKit and email approval opens a Mail draft.
+- Without an OpenAI key, typed requests use the built-in local planner; Realtime voice requires OpenAI.
 
 ## Validate
 
 ```bash
-npm test
-node --check server/index.mjs
 swiftc -parse $(find Nori -name '*.swift' -print)
 plutil -lint Nori/Resources/Info.plist Nori.xcodeproj/project.pbxproj
 xcodebuild -project Nori.xcodeproj -scheme Nori -sdk iphonesimulator build CODE_SIGNING_ALLOWED=NO
 ```
 
-The final `xcodebuild` command requires the full Xcode application, not only Command Line Tools.
-
-## Release readiness
-
-The app includes protected local persistence, Keychain credentials, bounded history, explicit external-action approval, timeout/error handling, an App Store icon, and an Apple privacy manifest. The server includes strict input limits, constant-time token authentication, rate limiting, request IDs, safe production errors, health/readiness probes, upstream timeouts, and graceful shutdown.
-
-See `PRODUCTION.md` before shipping. The bundled backend is designed for one personal Google account on one server instance. A public multi-user service still requires real user authentication, per-user OAuth storage, durable distributed idempotency, abuse controls, and a privacy policy.
+The final command requires the full Xcode application. See `PRODUCTION.md` before shipping.

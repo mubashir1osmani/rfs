@@ -13,21 +13,25 @@ final class AppViewModel: ObservableObject {
     @Published var autonomyEnabled = true
     @Published var activeError: String?
 
-    let speechRecognizer = SpeechRecognizer()
+    let realtimeVoiceService: RealtimeVoiceService
     private let assistantService: AssistantService
     private let integrationService: IntegrationService
     private let stateStore: AppStateStore
     private var hasRestoredState = false
     private var persistenceRevision: UInt64 = 0
+    private var pendingVoiceActions: [AssistantAction] = []
 
     init(
         assistantService: AssistantService = AssistantService(),
         integrationService: IntegrationService = IntegrationService(),
-        stateStore: AppStateStore = AppStateStore()
+        stateStore: AppStateStore = AppStateStore(),
+        realtimeVoiceService: RealtimeVoiceService = RealtimeVoiceService()
     ) {
         self.assistantService = assistantService
         self.integrationService = integrationService
         self.stateStore = stateStore
+        self.realtimeVoiceService = realtimeVoiceService
+        configureRealtimeVoice()
         Task { await restoreState() }
     }
 
@@ -79,6 +83,11 @@ final class AppViewModel: ObservableObject {
 
     func runDemo() {
         send("Show me the Nori demo")
+    }
+
+    func toggleRealtimeVoice() {
+        let context = AssistantContext(tasks: tasks, calendar: calendarBlocks, currentDate: Date())
+        Task { await realtimeVoiceService.toggle(context: context) }
     }
 
     func execute(_ action: AssistantAction, shouldUseIntegration: Bool = true) async {
@@ -178,6 +187,35 @@ final class AppViewModel: ObservableObject {
     private func trimMessageHistory() {
         if messages.count > 100 {
             messages = Array(messages.suffix(100))
+        }
+    }
+
+    private func configureRealtimeVoice() {
+        realtimeVoiceService.onUserTranscript = { [weak self] transcript in
+            guard let self else { return }
+            selectedTab = .assistant
+            messages.append(ChatMessage(id: UUID().uuidString, role: .user, text: transcript, actions: []))
+            trimMessageHistory()
+            persistState()
+        }
+        realtimeVoiceService.onAction = { [weak self] action in
+            guard let self else { return }
+            pendingVoiceActions.append(action)
+            if autonomyEnabled, action.kind == .task {
+                Task { await self.execute(action, shouldUseIntegration: false) }
+            }
+        }
+        realtimeVoiceService.onAssistantTranscript = { [weak self] transcript in
+            guard let self else { return }
+            messages.append(ChatMessage(
+                id: UUID().uuidString,
+                role: .assistant,
+                text: transcript,
+                actions: pendingVoiceActions
+            ))
+            pendingVoiceActions = []
+            trimMessageHistory()
+            persistState()
         }
     }
 }
